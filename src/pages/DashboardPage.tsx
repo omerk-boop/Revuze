@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Save, ArrowLeft, Edit2, Check, X } from 'lucide-react'
+import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Dashboard } from '../types/dashboard'
 import { getDashboard } from '../services/storage'
@@ -8,6 +8,7 @@ import { useDashboards } from '../hooks/useDashboards'
 import AIPromptBar from '../components/builder/AIPromptBar'
 import FilterPanel from '../components/builder/FilterPanel'
 import DashboardGrid from '../components/dashboard/DashboardGrid'
+import ImportDashboardModal from '../components/builder/ImportDashboardModal'
 
 export default function DashboardPage() {
   const { id } = useParams<{ id: string }>()
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [nameInput, setNameInput] = useState('')
   const [saved, setSaved] = useState(!isNew)
   const [dirty, setDirty] = useState(false)
+  const [showImport, setShowImport] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -137,6 +139,13 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-400">{dashboard.widgets.length} widget{dashboard.widgets.length !== 1 ? 's' : ''}</span>
           <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
+          >
+            <ClipboardPaste className="w-4 h-4" />
+            Paste Config
+          </button>
+          <button
             onClick={handleSave}
             disabled={!dirty}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -170,6 +179,13 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {showImport && (
+        <ImportDashboardModal
+          onImport={handleGenerated}
+          onClose={() => setShowImport(false)}
+        />
+      )}
     </div>
   )
 }
