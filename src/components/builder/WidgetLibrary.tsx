@@ -47,21 +47,25 @@ function LibraryCard({
   item,
   onAdd,
   onDragStart,
+  locked,
 }: {
   item: LibraryEntry
-  onAdd: (item: LibraryItem) => void
-  onDragStart: (item: LibraryItem) => void
+  onAdd?: (item: LibraryItem) => void
+  onDragStart?: (item: LibraryItem) => void
+  locked?: boolean
 }) {
   const Icon = item.icon
   return (
     <div
-      className="group flex items-center gap-3 px-3 py-2.5 rounded-lg border border-slate-100 bg-white hover:border-brand-200 hover:bg-brand-50/40 transition-all cursor-grab active:cursor-grabbing select-none"
-      draggable
+      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg border border-slate-100 bg-white transition-all select-none ${
+        locked ? 'opacity-60 cursor-not-allowed' : 'hover:border-brand-200 hover:bg-brand-50/40 cursor-grab active:cursor-grabbing'
+      }`}
+      draggable={!locked}
       unselectable="on"
-      onDragStart={(e) => {
+      onDragStart={locked ? undefined : (e) => {
         e.dataTransfer.effectAllowed = 'copy'
         e.dataTransfer.setData('text/plain', item.id)
-        onDragStart(item)
+        onDragStart?.(item)
       }}
       onDragEnd={() => setDraggingItem(null)}
     >
@@ -70,14 +74,14 @@ function LibraryCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-slate-700 truncate leading-tight">{item.name}</p>
+        <p className="text-xs font-semibold text-slate-700 leading-tight line-clamp-2" title={item.name}>{item.name}</p>
         <p className="text-[10px] text-slate-400 truncate leading-tight mt-0.5">{item.description}</p>
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0">
         <span className="text-[10px] text-slate-300 font-mono">{item.sizeLabel}</span>
         <button
-          onClick={(e) => { e.stopPropagation(); onAdd(item) }}
+          onClick={(e) => { e.stopPropagation(); onAdd?.(item) }}
           className="w-6 h-6 rounded flex items-center justify-center text-slate-300 hover:text-brand-600 hover:bg-brand-100 opacity-0 group-hover:opacity-100 transition-all"
           title="Add to dashboard"
         >
@@ -92,11 +96,12 @@ function LibraryCard({
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
 interface WidgetLibraryProps {
-  onAdd: (item: LibraryItem) => void
-  onDragStart: (item: LibraryItem) => void
+  onAdd?: (item: LibraryItem) => void
+  onDragStart?: (item: LibraryItem) => void
+  locked?: boolean
 }
 
-export default function WidgetLibrary({ onAdd, onDragStart }: WidgetLibraryProps) {
+export default function WidgetLibrary({ onAdd, onDragStart, locked = false }: WidgetLibraryProps) {
   const [search, setSearch] = useState('')
 
   const filtered = search.trim()
@@ -141,6 +146,7 @@ export default function WidgetLibrary({ onAdd, onDragStart }: WidgetLibraryProps
                     item={item}
                     onAdd={onAdd}
                     onDragStart={onDragStart}
+                    locked={locked}
                   />
                 ))}
               </div>
@@ -155,10 +161,14 @@ export default function WidgetLibrary({ onAdd, onDragStart }: WidgetLibraryProps
 
       {/* Footer hint */}
       <div className="px-4 py-3 border-t border-slate-100 shrink-0">
-        <p className="text-[10px] text-slate-400 leading-relaxed">
-          <span className="font-semibold text-slate-500">Drag</span> onto the canvas to position,
-          or click <span className="font-semibold text-slate-500">+</span> to append below.
-        </p>
+        {locked ? (
+          <p className="text-[10px] text-amber-600 font-semibold">Dashboard is locked — unlock to add widgets.</p>
+        ) : (
+          <p className="text-[10px] text-slate-400 leading-relaxed">
+            <span className="font-semibold text-slate-500">Drag</span> onto the canvas to position,
+            or click <span className="font-semibold text-slate-500">+</span> to append below.
+          </p>
+        )}
       </div>
     </div>
   )

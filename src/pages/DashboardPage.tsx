@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft } from 'lucide-react'
+import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft, Lock, Unlock } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Dashboard, Widget } from '../types/dashboard'
 import { getDashboard } from '../services/storage'
@@ -13,6 +13,7 @@ import DashboardGrid from '../components/dashboard/DashboardGrid'
 import ImportDashboardModal from '../components/builder/ImportDashboardModal'
 import AddRowPanel from '../components/builder/AddRowPanel'
 import WidgetLibrary from '../components/builder/WidgetLibrary'
+import { useBrands } from '../hooks/useBrands'
 
 export default function DashboardPage() {
   const { id } = useParams<{ id: string }>()
@@ -28,6 +29,11 @@ export default function DashboardPage() {
   const [dirty, setDirty] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showLibrary, setShowLibrary] = useState(true)
+  const [locked, setLocked] = useState(false)
+
+  const { brands: availableBrands, loading: brandsLoading } = useBrands(
+    dashboard?.filter.range ?? { start_date: '2025-03-01', end_date: '2026-02-28', range_type: 'lastTwelveMonths' }
+  )
 
   useEffect(() => {
     if (id) {
@@ -195,6 +201,21 @@ export default function DashboardPage() {
         {/* Actions */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs text-slate-400 font-medium">{dashboard.widgets.length}w</span>
+
+          {/* Lock toggle */}
+          <button
+            onClick={() => setLocked((v) => !v)}
+            title={locked ? 'Unlock dashboard (enable editing)' : 'Lock dashboard (prevent accidental edits)'}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+              locked
+                ? 'bg-amber-100 text-amber-700 border border-amber-300 hover:bg-amber-200'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+            }`}
+          >
+            {locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+            {locked ? 'Locked' : 'Lock'}
+          </button>
+
           <button
             onClick={() => setShowImport(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-colors"
@@ -220,8 +241,9 @@ export default function DashboardPage() {
         <div className={`shrink-0 flex flex-col transition-all duration-200 ease-in-out overflow-hidden ${showLibrary ? 'w-64' : 'w-0'}`}>
           {showLibrary && (
             <WidgetLibrary
-              onAdd={handleLibraryAdd}
-              onDragStart={(item) => setDraggingItem(item)}
+              onAdd={locked ? undefined : handleLibraryAdd}
+              onDragStart={locked ? undefined : (item) => setDraggingItem(item)}
+              locked={locked}
             />
           )}
         </div>
@@ -249,18 +271,23 @@ export default function DashboardPage() {
             />
 
             {/* Filters */}
-            <FilterPanel filter={dashboard.filter} onChange={handleFilterChange} />
+            <FilterPanel
+              filter={dashboard.filter}
+              onChange={handleFilterChange}
+              availableBrands={availableBrands}
+              brandsLoading={brandsLoading}
+            />
 
             {/* Grid canvas */}
             <DashboardGrid
               dashboard={dashboard}
               onLayoutChange={handleLayoutChange}
-              onWidgetDrop={handleWidgetDrop}
-              editable={true}
+              onWidgetDrop={locked ? undefined : handleWidgetDrop}
+              editable={!locked}
             />
 
-            {/* Row builder */}
-            <AddRowPanel currentMaxY={maxY} onAddRow={handleAddRow} />
+            {/* Row builder — hidden when locked */}
+            {!locked && <AddRowPanel currentMaxY={maxY} onAddRow={handleAddRow} />}
 
           </div>
         </div>
