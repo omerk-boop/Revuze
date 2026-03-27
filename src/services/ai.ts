@@ -125,7 +125,7 @@ export const generateDashboard = async (
   prompt: string,
   existingDashboard?: Partial<Dashboard>
 ): Promise<AIGenerateResult> => {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+  const apiKey = (import.meta.env.VITE_ANTHROPIC_API_KEY || '').trim()
   if (!apiKey || apiKey === 'sk-ant-...') {
     throw new Error(
       'VITE_ANTHROPIC_API_KEY is not set. Add your key to the .env file and restart the server.'
