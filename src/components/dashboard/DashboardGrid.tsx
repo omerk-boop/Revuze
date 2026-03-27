@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
 import GridLayout from 'react-grid-layout'
 import type { Layout } from 'react-grid-layout'
-import { useAuth0 } from '@auth0/auth0-react'
+import { useToken } from '../../context/TokenContext'
 import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, TopicsTableConfig, TopicsScatterConfig } from '../../types/dashboard'
 import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse } from '../../types/api'
 import { useWidgetData } from '../../hooks/useWidgetData'
@@ -68,16 +68,7 @@ interface DashboardGridProps {
 }
 
 export default function DashboardGrid({ dashboard, onLayoutChange, editable = false }: DashboardGridProps) {
-  const { getAccessTokenSilently } = useAuth0()
-  const [token, setToken] = useState<string | null>(null)
-
-  useEffect(() => {
-    getAccessTokenSilently({
-      authorizationParams: { audience: import.meta.env.VITE_AUTH0_AUDIENCE },
-    })
-      .then(setToken)
-      .catch(console.error)
-  }, [getAccessTokenSilently])
+  const token = useToken()
 
   const layout: Layout[] = dashboard.widgets.map((w) => ({
     i: w.id,

@@ -1,6 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { setAuthToken } from '../../services/api'
+import { TokenContext } from '../../context/TokenContext'
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -8,15 +9,14 @@ interface AuthGuardProps {
 
 export default function AuthGuard({ children }: AuthGuardProps) {
   const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0()
+  const [token, setToken] = useState<string | null>(null)
 
   useEffect(() => {
     if (isAuthenticated) {
       getAccessTokenSilently({
-        authorizationParams: {
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        },
+        authorizationParams: { audience: import.meta.env.VITE_AUTH0_AUDIENCE },
       })
-        .then(setAuthToken)
+        .then((t) => { setAuthToken(t); setToken(t) })
         .catch(console.error)
     }
   }, [isAuthenticated, getAccessTokenSilently])
@@ -37,5 +37,5 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     return null
   }
 
-  return <>{children}</>
+  return <TokenContext.Provider value={token}>{children}</TokenContext.Provider>
 }
