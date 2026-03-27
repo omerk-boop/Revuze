@@ -4,7 +4,9 @@ import {
   fetchStatisticsTotals,
   fetchKeyMetricsOvertime,
   fetchTopicsTrends,
+  fetchProducts,
 } from '../services/api'
+import type { ProductsTableConfig } from '../types/dashboard'
 
 interface WidgetDataState<T = unknown> {
   data: T | null
@@ -52,6 +54,11 @@ export const useWidgetData = (
       case 'topics_scatter':
         fetchFn = fetchTopicsTrends(body)
         break
+      case 'products_table': {
+        const cfg = widget.config as ProductsTableConfig
+        fetchFn = fetchProducts({ ...body, size: cfg.size ?? 20, search: cfg.search })
+        break
+      }
       default:
         return
     }

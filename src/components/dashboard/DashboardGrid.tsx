@@ -3,13 +3,14 @@ import GridLayout from 'react-grid-layout'
 import type { Layout } from 'react-grid-layout'
 import { useToken } from '../../context/TokenContext'
 import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, TopicsTableConfig, TopicsScatterConfig } from '../../types/dashboard'
-import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse } from '../../types/api'
+import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse, ProductsResponse } from '../../types/api'
 import { useWidgetData } from '../../hooks/useWidgetData'
 import WidgetWrapper from '../widgets/WidgetWrapper'
 import KPICard from '../widgets/KPICard'
 import TimeSeriesChart from '../widgets/TimeSeriesChart'
 import TopicsTable from '../widgets/TopicsTable'
 import TopicsScatter from '../widgets/TopicsScatter'
+import ProductsTable from '../widgets/ProductsTable'
 
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -49,6 +50,8 @@ function WidgetRenderer({ widget, dashboard, token }: WidgetRendererProps) {
             limit={(widget.config as TopicsScatterConfig).limit}
           />
         )
+      case 'products_table':
+        return <ProductsTable data={data as ProductsResponse} />
       default:
         return null
     }

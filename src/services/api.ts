@@ -1,6 +1,6 @@
 import axios from 'axios'
 import type { DashboardFilter, DateRange } from '../types/dashboard'
-import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse, CatalogTotals } from '../types/api'
+import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse, CatalogTotals, ProductsResponse } from '../types/api'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://ci-hub-be.stg.revuze.it'
 
@@ -40,3 +40,7 @@ export const fetchTopicsTrends = (body: ApiRequestBody): Promise<TopicsTrendsRes
 export const fetchCatalogTotals = (body: {
   filter: { range: { start_date: string; end_date: string } }
 }): Promise<CatalogTotals> => client.post('/catalog/totals', body).then((r) => r.data)
+
+export const fetchProducts = (
+  body: ApiRequestBody & { page_index?: number; size?: number; search?: string }
+): Promise<ProductsResponse> => client.post('/products/', body).then((r) => r.data)
