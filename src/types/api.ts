@@ -41,6 +41,33 @@ export interface TopicsTrendsResponse {
   total_sentiment: number
 }
 
+export interface ProductItem {
+  identity: string
+  name: string
+  brand: string
+  sources: string[]
+  image: string
+  brand_image: string
+  sentiment_data: { sentiment: number; sentiment_previous: number; change: number }
+  reviews_data: { reviews: number; reviews_previous: number; change: number }
+  reviews_star_rating: { avg: number; avg_previous: number; change: number }
+  pdp_star_rating: number
+  ratings_count: number
+  department: string
+  price: number
+  product_url: string
+}
+
+export interface ProductsResponse {
+  paging: {
+    number_of_pages: number
+    page_index: number
+    page_size: number
+    number_of_results: number
+  }
+  products: ProductItem[]
+}
+
 export interface CatalogTotals {
   topics: string[]
   countries: string[]

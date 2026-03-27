@@ -32,7 +32,7 @@ export interface DashboardFilter {
   excluded_fields: string[]
 }
 
-export type WidgetType = 'kpi_card' | 'time_series' | 'topics_table' | 'topics_scatter'
+export type WidgetType = 'kpi_card' | 'time_series' | 'topics_table' | 'topics_scatter' | 'products_table'
 
 export type KPIMetric =
   | 'sentiment'
@@ -59,7 +59,12 @@ export interface TopicsScatterConfig {
   limit?: number
 }
 
-export type WidgetConfig = KPICardConfig | TimeSeriesConfig | TopicsTableConfig | TopicsScatterConfig
+export interface ProductsTableConfig {
+  size?: number
+  search?: string
+}
+
+export type WidgetConfig = KPICardConfig | TimeSeriesConfig | TopicsTableConfig | TopicsScatterConfig | ProductsTableConfig
 
 export interface WidgetLayout {
   x: number
