@@ -1,10 +1,12 @@
-import { useCallback } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
 import GridLayout from 'react-grid-layout'
 import type { Layout } from 'react-grid-layout'
 import { useToken } from '../../context/TokenContext'
 import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, TopicsTableConfig, TopicsScatterConfig } from '../../types/dashboard'
 import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse, ProductsResponse, BrandTimeSeriesData } from '../../types/api'
 import { useWidgetData } from '../../hooks/useWidgetData'
+import { getDraggingItem } from '../../utils/dragState'
+import type { LibraryItem } from '../../utils/dragState'
 import WidgetWrapper from '../widgets/WidgetWrapper'
 import KPICard from '../widgets/KPICard'
 import TimeSeriesChart from '../widgets/TimeSeriesChart'
@@ -16,19 +18,10 @@ import BrandReviewsChart from '../widgets/BrandReviewsChart'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 
-interface WidgetRendererProps {
-  widget: Widget
-  dashboard: Dashboard
-  token: string | null
-}
+// ─── Widget renderer ──────────────────────────────────────────────────────────
 
-function WidgetRenderer({ widget, dashboard, token }: WidgetRendererProps) {
-  const { data, loading, error } = useWidgetData(
-    widget,
-    dashboard.filter,
-    dashboard.compare_range,
-    token
-  )
+function WidgetRenderer({ widget, dashboard, token }: { widget: Widget; dashboard: Dashboard; token: string | null }) {
+  const { data, loading, error } = useWidgetData(widget, dashboard.filter, dashboard.compare_range, token)
 
   const renderContent = () => {
     if (!data) return null
@@ -36,21 +29,11 @@ function WidgetRenderer({ widget, dashboard, token }: WidgetRendererProps) {
       case 'kpi_card':
         return <KPICard data={data as StatisticsTotals} metric={(widget.config as KPICardConfig).metric} />
       case 'time_series':
-        return (
-          <TimeSeriesChart
-            data={data as TimeSeriesResponse}
-            metrics={(widget.config as TimeSeriesConfig).metrics}
-          />
-        )
+        return <TimeSeriesChart data={data as TimeSeriesResponse} metrics={(widget.config as TimeSeriesConfig).metrics} />
       case 'topics_table':
         return <TopicsTable data={data as TopicsTrendsResponse} config={widget.config as TopicsTableConfig} />
       case 'topics_scatter':
-        return (
-          <TopicsScatter
-            data={data as TopicsTrendsResponse}
-            limit={(widget.config as TopicsScatterConfig).limit}
-          />
-        )
+        return <TopicsScatter data={data as TopicsTrendsResponse} limit={(widget.config as TopicsScatterConfig).limit} />
       case 'products_table':
         return <ProductsTable data={data as ProductsResponse} />
       case 'brand_reviews_overtime':
@@ -67,14 +50,35 @@ function WidgetRenderer({ widget, dashboard, token }: WidgetRendererProps) {
   )
 }
 
+// ─── Grid ─────────────────────────────────────────────────────────────────────
+
 interface DashboardGridProps {
   dashboard: Dashboard
   onLayoutChange?: (widgets: Widget[]) => void
+  onWidgetDrop?: (item: LibraryItem, x: number, y: number) => void
   editable?: boolean
 }
 
-export default function DashboardGrid({ dashboard, onLayoutChange, editable = false }: DashboardGridProps) {
+export default function DashboardGrid({
+  dashboard,
+  onLayoutChange,
+  onWidgetDrop,
+  editable = false,
+}: DashboardGridProps) {
   const token = useToken()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [gridWidth, setGridWidth] = useState(1200)
+
+  // Measure container width so the grid fills its parent (adjusts when sidebar opens/closes)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      setGridWidth(entries[0].contentRect.width)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const layout: Layout[] = dashboard.widgets.map((w) => ({
     i: w.id,
@@ -98,32 +102,55 @@ export default function DashboardGrid({ dashboard, onLayoutChange, editable = fa
     [dashboard.widgets, onLayoutChange]
   )
 
-  if (dashboard.widgets.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-48 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
-        <p className="text-sm">Use the AI prompt above to generate your dashboard widgets.</p>
-      </div>
-    )
-  }
+  const handleDrop = useCallback(
+    (_layout: Layout[], item: Layout, _e: MouseEvent) => {
+      const libItem = getDraggingItem()
+      if (!libItem || !onWidgetDrop) return
+      onWidgetDrop(libItem, item.x, item.y)
+    },
+    [onWidgetDrop]
+  )
+
+  const handleDropDragOver = useCallback(() => {
+    const item = getDraggingItem()
+    return item ? { w: item.defaultW, h: item.defaultH } : { w: 3, h: 2 }
+  }, [])
+
+  const emptyCanvas = dashboard.widgets.length === 0
 
   return (
-    <GridLayout
-      className="layout"
-      layout={layout}
-      cols={12}
-      rowHeight={80}
-      width={1252}
-      onLayoutChange={handleLayoutChange}
-      isDraggable={editable}
-      isResizable={editable}
-      margin={[12, 12]}
-      containerPadding={[0, 0]}
-    >
-      {dashboard.widgets.map((widget) => (
-        <div key={widget.id}>
-          <WidgetRenderer widget={widget} dashboard={dashboard} token={token} />
+    <div ref={containerRef} className="w-full">
+      {emptyCanvas ? (
+        <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-slate-300 rounded-xl text-slate-400 bg-white/50">
+          <div className="text-center">
+            <p className="text-sm font-medium text-slate-500">Your canvas is empty</p>
+            <p className="text-xs text-slate-400 mt-1">Drag widgets from the library or use the AI prompt to get started</p>
+          </div>
         </div>
-      ))}
-    </GridLayout>
+      ) : (
+        <GridLayout
+          className="layout"
+          layout={layout}
+          cols={12}
+          rowHeight={80}
+          width={gridWidth}
+          onLayoutChange={handleLayoutChange}
+          isDraggable={editable}
+          isResizable={editable}
+          isDroppable={editable}
+          droppingItem={{ i: '__dropping__', w: 3, h: 2 }}
+          onDrop={handleDrop}
+          onDropDragOver={handleDropDragOver}
+          margin={[12, 12]}
+          containerPadding={[0, 0]}
+        >
+          {dashboard.widgets.map((widget) => (
+            <div key={widget.id}>
+              <WidgetRenderer widget={widget} dashboard={dashboard} token={token} />
+            </div>
+          ))}
+        </GridLayout>
+      )}
+    </div>
   )
 }
