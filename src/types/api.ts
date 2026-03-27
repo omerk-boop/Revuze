@@ -68,6 +68,11 @@ export interface ProductsResponse {
   products: ProductItem[]
 }
 
+export interface BrandTimeSeriesData {
+  brands: string[]
+  points: { date: string; [brand: string]: number | string }[]
+}
+
 export interface CatalogTotals {
   topics: string[]
   countries: string[]

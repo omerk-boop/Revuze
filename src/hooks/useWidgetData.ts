@@ -6,7 +6,8 @@ import {
   fetchTopicsTrends,
   fetchProducts,
 } from '../services/api'
-import type { ProductsTableConfig } from '../types/dashboard'
+import type { ProductsTableConfig, BrandReviewsOvertimeConfig } from '../types/dashboard'
+import type { BrandTimeSeriesData } from '../types/api'
 
 interface WidgetDataState<T = unknown> {
   data: T | null
@@ -57,6 +58,33 @@ export const useWidgetData = (
       case 'products_table': {
         const cfg = widget.config as ProductsTableConfig
         fetchFn = fetchProducts({ ...body, size: cfg.size ?? 20, search: cfg.search })
+        break
+      }
+      case 'brand_reviews_overtime': {
+        const cfg = widget.config as BrandReviewsOvertimeConfig
+        const brandsToFetch = cfg.brands?.length ? cfg.brands : effectiveFilter.brand_names
+        if (!brandsToFetch.length) {
+          setState({ data: { brands: [], points: [] } as BrandTimeSeriesData, loading: false, error: null })
+          return
+        }
+        fetchFn = Promise.all(
+          brandsToFetch.map((brand) =>
+            fetchKeyMetricsOvertime({ ...body, filter: { ...effectiveFilter, brand_names: [brand] } })
+              .then((r) => ({ brand, series: r.data ?? [] }))
+          )
+        ).then((results) => {
+          const dateMap: Record<string, Record<string, number>> = {}
+          results.forEach(({ brand, series }) => {
+            series.forEach((pt) => {
+              if (!dateMap[pt.date]) dateMap[pt.date] = {}
+              dateMap[pt.date][brand] = pt.volume
+            })
+          })
+          const points = Object.entries(dateMap)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, values]) => ({ date, ...values }))
+          return { brands: brandsToFetch, points } as BrandTimeSeriesData
+        })
         break
       }
       default:
