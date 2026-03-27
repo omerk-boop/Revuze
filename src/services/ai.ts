@@ -119,6 +119,7 @@ Return ONLY this JSON structure, no extra text or markdown:
 
 export interface AIGenerateResult {
   dashboard: Partial<Dashboard>
+  mode: 'replace' | 'append'
 }
 
 export const generateDashboard = async (
@@ -139,8 +140,9 @@ export const generateDashboard = async (
     dangerouslyAllowBrowser: true,
   })
 
-  const userMessage = existingDashboard
-    ? `Current dashboard:\n${JSON.stringify(existingDashboard, null, 2)}\n\nUpdate request: ${prompt}\n\nReturn the complete updated dashboard JSON.`
+  const isAdding = existingDashboard && (existingDashboard.widgets?.length ?? 0) > 0
+  const userMessage = isAdding
+    ? `Existing widgets on the dashboard:\n${JSON.stringify(existingDashboard!.widgets, null, 2)}\n\nAdd request: ${prompt}\n\nReturn ONLY a JSON object with a "widgets" array containing the NEW widgets to add. Do not repeat existing widgets. Example: { "widgets": [...] }`
     : prompt
 
   let response
@@ -173,10 +175,11 @@ export const generateDashboard = async (
   }))
 
   return {
+    mode: isAdding ? 'append' : 'replace',
     dashboard: {
       ...parsed,
       widgets,
-      filter: { ...DEFAULT_FILTER, ...parsed.filter },
+      filter: { ...DEFAULT_FILTER, ...(parsed.filter ?? {}) },
       compare_range: parsed.compare_range || DEFAULT_COMPARE_RANGE,
     },
   }

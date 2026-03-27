@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { X, ClipboardPaste, CheckCircle } from 'lucide-react'
+import { X, ClipboardPaste, CheckCircle, PlusCircle, RefreshCw } from 'lucide-react'
 import type { Dashboard } from '../../types/dashboard'
 
 interface ImportDashboardModalProps {
-  onImport: (config: Partial<Dashboard>) => void
+  hasExistingWidgets: boolean
+  onImport: (config: Partial<Dashboard>, mode: 'replace' | 'append') => void
   onClose: () => void
 }
 
-export default function ImportDashboardModal({ onImport, onClose }: ImportDashboardModalProps) {
+export default function ImportDashboardModal({ hasExistingWidgets, onImport, onClose }: ImportDashboardModalProps) {
   const [json, setJson] = useState('')
   const [error, setError] = useState('')
+  const [mode, setMode] = useState<'replace' | 'append'>(hasExistingWidgets ? 'append' : 'replace')
 
   const handleImport = () => {
     try {
@@ -18,7 +20,7 @@ export default function ImportDashboardModal({ onImport, onClose }: ImportDashbo
         setError('Invalid dashboard config — must have a "widgets" array.')
         return
       }
-      onImport(parsed)
+      onImport(parsed, mode)
       onClose()
     } catch {
       setError('Invalid JSON — please check the format and try again.')
@@ -31,7 +33,7 @@ export default function ImportDashboardModal({ onImport, onClose }: ImportDashbo
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <ClipboardPaste className="w-5 h-5 text-brand-600" />
-            <h2 className="font-semibold text-slate-800">Paste Dashboard Config</h2>
+            <h2 className="font-semibold text-slate-800">Paste Widget Config</h2>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
             <X className="w-4 h-4" />
@@ -39,14 +41,43 @@ export default function ImportDashboardModal({ onImport, onClose }: ImportDashbo
         </div>
 
         <div className="p-6">
+          {hasExistingWidgets && (
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setMode('append')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  mode === 'append'
+                    ? 'bg-brand-600 text-white border-brand-600'
+                    : 'text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <PlusCircle className="w-4 h-4" />
+                Add to dashboard
+              </button>
+              <button
+                onClick={() => setMode('replace')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  mode === 'replace'
+                    ? 'bg-slate-700 text-white border-slate-700'
+                    : 'text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <RefreshCw className="w-4 h-4" />
+                Replace dashboard
+              </button>
+            </div>
+          )}
+
           <p className="text-sm text-slate-500 mb-3">
-            Paste a dashboard JSON config below. You can get configs by asking Claude to generate one for you.
+            {mode === 'append'
+              ? 'New widgets will be added below your existing ones.'
+              : 'This will replace all current widgets with the pasted config.'}
           </p>
 
           <textarea
             value={json}
             onChange={(e) => { setJson(e.target.value); setError('') }}
-            placeholder={'{\n  "name": "My Dashboard",\n  "widgets": [...]\n}'}
+            placeholder={'{\n  "widgets": [...]\n}'}
             rows={12}
             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-xs text-slate-700 font-mono resize-none focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
           />
@@ -62,7 +93,7 @@ export default function ImportDashboardModal({ onImport, onClose }: ImportDashbo
               className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 disabled:opacity-40 transition-colors"
             >
               <CheckCircle className="w-4 h-4" />
-              Apply Config
+              {mode === 'append' ? 'Add Widgets' : 'Apply Config'}
             </button>
             <button
               onClick={onClose}

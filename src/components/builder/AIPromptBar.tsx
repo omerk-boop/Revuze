@@ -6,7 +6,7 @@ import { generateDashboard } from '../../services/ai'
 
 interface AIPromptBarProps {
   dashboard?: Partial<Dashboard>
-  onGenerated: (dashboard: Partial<Dashboard>, prompt: string) => void
+  onGenerated: (dashboard: Partial<Dashboard>, prompt: string, mode: 'replace' | 'append') => void
   isNewDashboard?: boolean
 }
 
@@ -36,7 +36,7 @@ export default function AIPromptBar({ dashboard, onGenerated, isNewDashboard = f
       const result = await generateDashboard(trimmed, isNewDashboard ? undefined : dashboard)
       setHistory((h) => [trimmed, ...h.slice(0, 4)])
       setPrompt('')
-      onGenerated(result.dashboard, trimmed)
+      onGenerated(result.dashboard, trimmed, result.mode)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate dashboard')
     } finally {

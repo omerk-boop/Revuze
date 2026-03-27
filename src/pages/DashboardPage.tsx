@@ -36,21 +36,34 @@ export default function DashboardPage() {
     }
   }, [id, navigate])
 
-  const handleGenerated = (partial: Partial<Dashboard>) => {
+  const handleGenerated = (partial: Partial<Dashboard>, _prompt?: string, mode: 'replace' | 'append' = 'replace') => {
     setDashboard((prev) => {
       if (!prev) return prev
-      const updated: Dashboard = {
+      const newWidgets = (partial.widgets || []).map((w) => ({
+        ...w,
+        id: w.id || uuidv4(),
+      }))
+
+      let widgets: Dashboard['widgets']
+      if (mode === 'append' && prev.widgets.length > 0) {
+        const maxY = prev.widgets.reduce((m, w) => Math.max(m, w.layout.y + w.layout.h), 0)
+        const shifted = newWidgets.map((w) => ({
+          ...w,
+          layout: { ...w.layout, y: w.layout.y + maxY },
+        }))
+        widgets = [...prev.widgets, ...shifted]
+      } else {
+        widgets = newWidgets
+      }
+
+      return {
         ...prev,
-        ...partial,
+        ...(mode === 'replace' ? partial : {}),
         id: prev.id,
         created_at: prev.created_at,
         updated_at: new Date().toISOString(),
-        widgets: (partial.widgets || []).map((w) => ({
-          ...w,
-          id: w.id || uuidv4(),
-        })),
+        widgets,
       }
-      return updated
     })
     setDirty(true)
     setSaved(false)
@@ -162,7 +175,7 @@ export default function DashboardPage() {
           {/* AI Prompt */}
           <AIPromptBar
             dashboard={dashboard}
-            onGenerated={handleGenerated}
+            onGenerated={(d, p, mode) => handleGenerated(d, p, mode)}
             isNewDashboard={isNew && dashboard.widgets.length === 0}
           />
 
@@ -182,7 +195,8 @@ export default function DashboardPage() {
 
       {showImport && (
         <ImportDashboardModal
-          onImport={handleGenerated}
+          hasExistingWidgets={dashboard.widgets.length > 0}
+          onImport={(config, mode) => handleGenerated(config, undefined, mode)}
           onClose={() => setShowImport(false)}
         />
       )}
