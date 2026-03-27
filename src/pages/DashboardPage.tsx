@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
-import type { Dashboard } from '../types/dashboard'
+import type { Dashboard, Widget } from '../types/dashboard'
 import { getDashboard } from '../services/storage'
 import { useDashboards } from '../hooks/useDashboards'
 import AIPromptBar from '../components/builder/AIPromptBar'
 import FilterPanel from '../components/builder/FilterPanel'
 import DashboardGrid from '../components/dashboard/DashboardGrid'
 import ImportDashboardModal from '../components/builder/ImportDashboardModal'
+import AddRowPanel from '../components/builder/AddRowPanel'
 
 export default function DashboardPage() {
   const { id } = useParams<{ id: string }>()
@@ -86,6 +87,15 @@ export default function DashboardPage() {
 
   const handleLayoutChange = (widgets: Dashboard['widgets']) => {
     setDashboard((prev) => (prev ? { ...prev, widgets } : prev))
+    setDirty(true)
+    setSaved(false)
+  }
+
+  const handleAddRow = (widgets: Widget[]) => {
+    setDashboard((prev) => {
+      if (!prev) return prev
+      return { ...prev, widgets: [...prev.widgets, ...widgets], updated_at: new Date().toISOString() }
+    })
     setDirty(true)
     setSaved(false)
   }
@@ -190,6 +200,12 @@ export default function DashboardPage() {
               editable={true}
             />
           </div>
+
+          {/* Row Builder */}
+          <AddRowPanel
+            currentMaxY={dashboard.widgets.reduce((m, w) => Math.max(m, w.layout.y + w.layout.h), 0)}
+            onAddRow={handleAddRow}
+          />
         </div>
       </div>
 
