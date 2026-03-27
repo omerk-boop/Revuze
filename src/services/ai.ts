@@ -126,11 +126,13 @@ export const generateDashboard = async (
   existingDashboard?: Partial<Dashboard>
 ): Promise<AIGenerateResult> => {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-  if (!apiKey) {
+  if (!apiKey || apiKey === 'sk-ant-...') {
     throw new Error(
-      'VITE_ANTHROPIC_API_KEY is not configured. Add it to your .env file.'
+      'VITE_ANTHROPIC_API_KEY is not set. Add your key to the .env file and restart the server.'
     )
   }
+  // Show first 12 chars in errors to help diagnose key issues
+  const keyPreview = apiKey.substring(0, 12) + '...'
 
   const anthropic = new Anthropic({
     apiKey,
@@ -141,12 +143,18 @@ export const generateDashboard = async (
     ? `Current dashboard:\n${JSON.stringify(existingDashboard, null, 2)}\n\nUpdate request: ${prompt}\n\nReturn the complete updated dashboard JSON.`
     : prompt
 
-  const response = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 4096,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userMessage }],
-  })
+  let response
+  try {
+    response = await anthropic.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMessage }],
+    })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    throw new Error(`API call failed (key starts with: ${keyPreview}). ${msg}`)
+  }
 
   const content = response.content[0]
   if (content.type !== 'text') throw new Error('Unexpected AI response type')
