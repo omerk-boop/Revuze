@@ -61,7 +61,7 @@ function WidgetRenderer({ widget, dashboard, token }: WidgetRendererProps) {
   }
 
   return (
-    <WidgetWrapper title={widget.title} loading={loading} error={error}>
+    <WidgetWrapper title={widget.title} type={widget.type} loading={loading} error={error}>
       {renderContent()}
     </WidgetWrapper>
   )

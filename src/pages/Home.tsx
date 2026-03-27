@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Plus } from 'lucide-react'
 import { useDashboards } from '../hooks/useDashboards'
 import DashboardList from '../components/dashboard/DashboardList'
 
@@ -13,42 +13,49 @@ export default function Home() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-2xl font-bold text-slate-900">Your Dashboards</h1>
-          <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-sm font-medium">
-            {dashboards.length}
-          </span>
-        </div>
-        <p className="text-slate-500 text-sm">
-          Build custom analytics views powered by AI. Describe what you want to analyze and your dashboard is built instantly.
-        </p>
-      </div>
-
-      {dashboards.length === 0 && (
-        <div className="mb-8 bg-gradient-to-r from-brand-600 to-indigo-700 rounded-2xl p-8 text-white">
-          <div className="flex items-center gap-3 mb-3">
-            <Sparkles className="w-6 h-6" />
-            <h2 className="text-xl font-bold">Get started with AI</h2>
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Page header */}
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Dashboards</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Build custom analytics views with AI — describe what you want, get it instantly.
+            </p>
           </div>
-          <p className="text-brand-100 mb-5 max-w-xl">
-            Create your first dashboard by describing what you want to analyze. The AI will select the right widgets, configure filters, and build your view instantly.
-          </p>
           <button
             onClick={handleCreate}
-            className="px-6 py-2.5 bg-white text-brand-700 rounded-lg font-semibold text-sm hover:bg-brand-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-semibold hover:bg-brand-700 transition-colors shadow-sm"
           >
-            Create my first dashboard →
+            <Plus className="w-4 h-4" />
+            New Dashboard
           </button>
         </div>
-      )}
 
-      <DashboardList
-        dashboards={dashboards}
-        onDelete={removeDashboard}
-        onCreate={handleCreate}
-      />
+        {/* Empty-state hero */}
+        {dashboards.length === 0 && (
+          <div className="mb-8 bg-gradient-to-br from-slate-900 to-brand-900 rounded-2xl p-8 text-white border border-slate-800 shadow-card-hover">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 bg-brand-500/30 rounded-lg flex items-center justify-center border border-brand-400/30">
+                <Sparkles className="w-4 h-4 text-brand-300" />
+              </div>
+              <h2 className="text-lg font-bold">Get started with AI</h2>
+            </div>
+            <p className="text-slate-300 mb-6 max-w-lg text-sm leading-relaxed">
+              Describe the analysis you need in plain language. The AI selects the right widgets,
+              configures filters, and builds your dashboard instantly — no setup required.
+            </p>
+            <button
+              onClick={handleCreate}
+              className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg font-semibold text-sm transition-colors shadow-sm"
+            >
+              Create my first dashboard →
+            </button>
+          </div>
+        )}
+
+        <DashboardList dashboards={dashboards} onDelete={removeDashboard} onCreate={handleCreate} />
+      </div>
     </div>
   )
 }

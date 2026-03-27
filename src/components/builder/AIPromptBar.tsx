@@ -52,16 +52,16 @@ export default function AIPromptBar({ dashboard, onGenerated, isNewDashboard = f
   }
 
   return (
-    <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-5 border border-slate-700">
+    <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 shadow-card">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 bg-brand-600 rounded-md flex items-center justify-center">
-          <Sparkles className="w-3.5 h-3.5 text-white" />
+        <div className="w-5 h-5 bg-brand-600 rounded flex items-center justify-center">
+          <Sparkles className="w-3 h-3 text-white" />
         </div>
-        <span className="text-sm font-semibold text-white">
-          {isNewDashboard ? 'Describe your dashboard' : 'Refine with AI'}
+        <span className="text-xs font-bold text-white uppercase tracking-wider">
+          {isNewDashboard ? 'Describe your dashboard' : 'Add or modify with AI'}
         </span>
-        {!isNewDashboard && dashboard?.name && (
-          <span className="text-xs text-slate-400 ml-1">— modifying "{dashboard.name}"</span>
+        {!isNewDashboard && dashboard?.widgets && dashboard.widgets.length > 0 && (
+          <span className="text-[11px] text-slate-500 ml-1">· new widgets will be added below existing ones</span>
         )}
       </div>
 
@@ -77,7 +77,7 @@ export default function AIPromptBar({ dashboard, onGenerated, isNewDashboard = f
               : 'e.g. "Add a topics scatter plot" or "Filter to Walmart only"'
           }
           rows={2}
-          className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 pr-12 text-sm text-white placeholder-slate-500 resize-none focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 pr-12 text-sm text-white placeholder-slate-600 resize-none focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors"
           disabled={loading}
         />
         <button
@@ -108,7 +108,7 @@ export default function AIPromptBar({ dashboard, onGenerated, isNewDashboard = f
               <button
                 key={s}
                 onClick={() => setPrompt(s)}
-                className="text-xs px-3 py-1.5 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors border border-slate-600"
+                className="text-xs px-3 py-1.5 rounded-full bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
               >
                 {s}
               </button>

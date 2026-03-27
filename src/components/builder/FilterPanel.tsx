@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronUp, Filter } from 'lucide-react'
+import { useState, useRef, useCallback } from 'react'
+import type { KeyboardEvent } from 'react'
+import { X, SlidersHorizontal } from 'lucide-react'
 import type { DashboardFilter } from '../../types/dashboard'
 
 interface FilterPanelProps {
@@ -8,34 +9,45 @@ interface FilterPanelProps {
 }
 
 const RANGE_OPTIONS = [
-  { value: 'lastThreeMonths', label: 'Last 3 months' },
-  { value: 'lastSixMonths', label: 'Last 6 months' },
-  { value: 'lastTwelveMonths', label: 'Last 12 months' },
+  { value: 'lastThreeMonths', label: '3M' },
+  { value: 'lastSixMonths',   label: '6M' },
+  { value: 'lastTwelveMonths',label: '12M' },
 ]
 
-const DOMAINS = [
-  'www.amazon.com', 'www.walmart.com', 'www.target.com', 'www.babylist.com',
-  'www.kohls.com', 'buybuybaby.com', 'www.macys.com', 'www.nordstrom.com',
-  'www.safety1st.com', 'www.maxicosi.com', 'www.amazon.co.uk',
-]
-
-const DOMAIN_LABELS: Record<string, string> = {
-  'www.amazon.com': 'Amazon US',
-  'www.amazon.co.uk': 'Amazon UK',
-  'www.walmart.com': 'Walmart',
-  'www.target.com': 'Target',
-  'www.babylist.com': 'Babylist',
-  'www.kohls.com': "Kohl's",
-  'buybuybaby.com': 'buybuy Baby',
-  'www.macys.com': "Macy's",
-  'www.nordstrom.com': 'Nordstrom',
-  'www.safety1st.com': 'Safety 1st',
-  'www.maxicosi.com': 'Maxi-Cosi',
+const RANGE_DATES: Record<string, { start_date: string; end_date: string }> = {
+  lastThreeMonths:  { start_date: '2025-12-01', end_date: '2026-02-28' },
+  lastSixMonths:    { start_date: '2025-09-01', end_date: '2026-02-28' },
+  lastTwelveMonths: { start_date: '2025-03-01', end_date: '2026-02-28' },
 }
 
-export default function FilterPanel({ filter, onChange }: FilterPanelProps) {
-  const [expanded, setExpanded] = useState(false)
+const DOMAINS = [
+  { value: 'www.amazon.com',    label: 'Amazon US' },
+  { value: 'www.amazon.co.uk', label: 'Amazon UK' },
+  { value: 'www.walmart.com',  label: 'Walmart' },
+  { value: 'www.target.com',   label: 'Target' },
+  { value: 'www.babylist.com', label: 'Babylist' },
+  { value: 'www.kohls.com',    label: "Kohl's" },
+  { value: 'buybuybaby.com',   label: 'buybuy Baby' },
+  { value: 'www.macys.com',    label: "Macy's" },
+  { value: 'www.nordstrom.com',label: 'Nordstrom' },
+]
 
+export default function FilterPanel({ filter, onChange }: FilterPanelProps) {
+  const [brandInput, setBrandInput] = useState('')
+  const brandInputRef = useRef<HTMLInputElement>(null)
+
+  const activeCount =
+    filter.domains.length +
+    filter.brand_names.length +
+    filter.star_ratings.length
+
+  // ── Date range ──────────────────────────────────────────────────────────────
+  const setRange = (value: string) => {
+    const dates = RANGE_DATES[value] ?? RANGE_DATES.lastTwelveMonths
+    onChange({ ...filter, range: { ...filter.range, range_type: value as DashboardFilter['range']['range_type'], ...dates } })
+  }
+
+  // ── Domains ─────────────────────────────────────────────────────────────────
   const toggleDomain = (domain: string) => {
     const domains = filter.domains.includes(domain)
       ? filter.domains.filter((d) => d !== domain)
@@ -43,91 +55,166 @@ export default function FilterPanel({ filter, onChange }: FilterPanelProps) {
     onChange({ ...filter, domains })
   }
 
-  const setRangeType = (value: string) => {
-    const rangeMap: Record<string, { start_date: string; end_date: string }> = {
-      lastThreeMonths: { start_date: '2025-12-01', end_date: '2026-02-28' },
-      lastSixMonths: { start_date: '2025-09-01', end_date: '2026-02-28' },
-      lastTwelveMonths: { start_date: '2025-03-01', end_date: '2026-02-28' },
-    }
-    const dates = rangeMap[value] || rangeMap.lastTwelveMonths
-    onChange({
-      ...filter,
-      range: { ...filter.range, range_type: value as DashboardFilter['range']['range_type'], ...dates },
-    })
+  // ── Brands ──────────────────────────────────────────────────────────────────
+  const addBrand = useCallback((raw: string) => {
+    const name = raw.trim()
+    if (!name || filter.brand_names.includes(name)) { setBrandInput(''); return }
+    onChange({ ...filter, brand_names: [...filter.brand_names, name] })
+    setBrandInput('')
+  }, [filter, onChange])
+
+  const removeBrand = (name: string) =>
+    onChange({ ...filter, brand_names: filter.brand_names.filter((b) => b !== name) })
+
+  const handleBrandKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addBrand(brandInput) }
+    if (e.key === 'Backspace' && !brandInput && filter.brand_names.length > 0)
+      removeBrand(filter.brand_names[filter.brand_names.length - 1])
   }
 
-  const activeFilterCount =
-    filter.domains.length +
-    filter.departments.length +
-    filter.countries.length
+  // ── Star ratings ────────────────────────────────────────────────────────────
+  const toggleStar = (star: number) => {
+    const stars = filter.star_ratings.includes(star)
+      ? filter.star_ratings.filter((s) => s !== star)
+      : [...filter.star_ratings, star]
+    onChange({ ...filter, star_ratings: stars })
+  }
+
+  // ── Clear all ───────────────────────────────────────────────────────────────
+  const clearAll = () =>
+    onChange({ ...filter, domains: [], brand_names: [], star_ratings: [] })
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-      <button
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
-      >
+    <div className="bg-white border border-slate-200 rounded-xl shadow-card overflow-hidden">
+      {/* Header row */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span>Global Filters</span>
-          {activeFilterCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold">
-              {activeFilterCount} active
+          <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+          <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Filters</span>
+          {activeCount > 0 && (
+            <span className="px-1.5 py-0.5 rounded bg-brand-600 text-white text-[10px] font-bold leading-none">
+              {activeCount}
             </span>
           )}
         </div>
-        {expanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-      </button>
+        {activeCount > 0 && (
+          <button
+            onClick={clearAll}
+            className="text-xs text-slate-400 hover:text-red-500 transition-colors font-medium flex items-center gap-1"
+          >
+            <X className="w-3 h-3" /> Clear all
+          </button>
+        )}
+      </div>
 
-      {expanded && (
-        <div className="px-4 pb-4 border-t border-slate-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-            {/* Date Range */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                Date Range
-              </label>
-              <div className="flex gap-2">
-                {RANGE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setRangeType(opt.value)}
-                    className={`flex-1 text-xs py-1.5 px-2 rounded-md border transition-colors ${
-                      filter.range.range_type === opt.value
-                        ? 'bg-brand-600 text-white border-brand-600'
-                        : 'border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-600'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+      {/* Filter rows */}
+      <div className="grid grid-cols-[auto_1fr_1fr_auto] divide-x divide-slate-100">
 
-            {/* Retailers */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                Retailers {filter.domains.length > 0 && <span className="text-brand-600">({filter.domains.length})</span>}
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {DOMAINS.map((domain) => (
-                  <button
-                    key={domain}
-                    onClick={() => toggleDomain(domain)}
-                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                      filter.domains.includes(domain)
-                        ? 'bg-brand-600 text-white border-brand-600'
-                        : 'border-slate-200 text-slate-600 hover:border-brand-300 hover:text-brand-600'
-                    }`}
-                  >
-                    {DOMAIN_LABELS[domain] || domain}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Date range */}
+        <div className="px-4 py-3 flex flex-col gap-2 min-w-0">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Period</p>
+          <div className="flex items-center gap-1">
+            {RANGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setRange(opt.value)}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                  filter.range.range_type === opt.value
+                    ? 'bg-brand-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
-      )}
+
+        {/* Retailers */}
+        <div className="px-4 py-3 flex flex-col gap-2 min-w-0">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+            Retailer {filter.domains.length > 0 && <span className="text-brand-600 normal-case font-bold">({filter.domains.length})</span>}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {DOMAINS.map(({ value, label }) => {
+              const active = filter.domains.includes(value)
+              return (
+                <button
+                  key={value}
+                  onClick={() => toggleDomain(value)}
+                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                    active
+                      ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
+                      : 'border-slate-200 text-slate-500 hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Brands */}
+        <div className="px-4 py-3 flex flex-col gap-2 min-w-0">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+            Brand {filter.brand_names.length > 0 && <span className="text-brand-600 normal-case font-bold">({filter.brand_names.length})</span>}
+          </p>
+          <div
+            className="flex flex-wrap gap-1.5 min-h-[28px] cursor-text"
+            onClick={() => brandInputRef.current?.focus()}
+          >
+            {filter.brand_names.map((b) => (
+              <span
+                key={b}
+                className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-indigo-600 text-white font-medium"
+              >
+                {b}
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeBrand(b) }}
+                  className="hover:opacity-70 transition-opacity leading-none"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            <input
+              ref={brandInputRef}
+              value={brandInput}
+              onChange={(e) => setBrandInput(e.target.value)}
+              onKeyDown={handleBrandKey}
+              onBlur={() => { if (brandInput.trim()) addBrand(brandInput) }}
+              placeholder={filter.brand_names.length === 0 ? 'Type brand + Enter…' : '+ add'}
+              className="text-xs text-slate-700 placeholder-slate-400 outline-none bg-transparent min-w-[100px] py-0.5"
+            />
+          </div>
+        </div>
+
+        {/* Star rating */}
+        <div className="px-4 py-3 flex flex-col gap-2">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Star Rating</p>
+          <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => {
+              const active = filter.star_ratings.includes(star)
+              return (
+                <button
+                  key={star}
+                  onClick={() => toggleStar(star)}
+                  title={`${star} star${star > 1 ? 's' : ''}`}
+                  className={`w-8 h-7 flex items-center justify-center rounded text-sm transition-colors ${
+                    active
+                      ? 'bg-amber-400 text-white shadow-sm'
+                      : 'text-slate-300 hover:text-amber-400 hover:bg-amber-50'
+                  }`}
+                >
+                  {'★'.repeat(star)}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+      </div>
     </div>
   )
 }
