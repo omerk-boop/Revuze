@@ -1,12 +1,18 @@
+import { useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
-import { LayoutDashboard, LogOut, ChevronDown } from 'lucide-react'
+import { LayoutDashboard, LogOut, ChevronDown, KeyRound } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import APIKeyModal from '../settings/APIKeyModal'
+import { getApiKey } from '../../services/apiKey'
 
 export default function Header() {
   const { user, logout } = useAuth0()
   const location = useLocation()
+  const [showKeyModal, setShowKeyModal] = useState(false)
+  const hasKey = !!getApiKey()
 
   return (
+    <>
     <header className="h-14 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-6 shrink-0 z-20">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-3 select-none">
@@ -42,6 +48,15 @@ export default function Header() {
 
       {/* User */}
       <div className="flex items-center gap-2">
+        {/* API Key button */}
+        <button
+          onClick={() => setShowKeyModal(true)}
+          className="relative p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+          title={hasKey ? 'Anthropic API key set — click to manage' : 'Set Anthropic API key for AI features'}
+        >
+          <KeyRound className="w-3.5 h-3.5" />
+          <span className={`absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full ${hasKey ? 'bg-emerald-400' : 'bg-red-500'}`} />
+        </button>
         <div className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-md hover:bg-slate-800 transition-colors cursor-default">
           {user?.picture ? (
             <img src={user.picture} alt={user.name} className="w-6 h-6 rounded-full ring-1 ring-slate-600" />
@@ -64,5 +79,8 @@ export default function Header() {
         </button>
       </div>
     </header>
+
+    {showKeyModal && <APIKeyModal onClose={() => setShowKeyModal(false)} />}
+    </>
   )
 }

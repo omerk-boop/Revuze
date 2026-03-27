@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { Dashboard } from '../types/dashboard'
 import { DEFAULT_FILTER, DEFAULT_COMPARE_RANGE } from '../types/dashboard'
 import { v4 as uuidv4 } from 'uuid'
+import { getApiKey } from './apiKey'
 
 const SYSTEM_PROMPT = `You are an AI dashboard builder for Revuze CI Hub, a consumer review analytics platform for baby and juvenile products (strollers, car seats, etc.).
 
@@ -126,13 +127,12 @@ export const generateDashboard = async (
   prompt: string,
   existingDashboard?: Partial<Dashboard>
 ): Promise<AIGenerateResult> => {
-  const apiKey = (import.meta.env.VITE_ANTHROPIC_API_KEY || '').trim()
+  const apiKey = getApiKey()
   if (!apiKey || apiKey === 'sk-ant-...') {
     throw new Error(
-      'VITE_ANTHROPIC_API_KEY is not set. Add your key to the .env file and restart the server.'
+      'No Anthropic API key set. Click the AI key button (⚿) in the header to add your key.'
     )
   }
-  // Show first 12 chars in errors to help diagnose key issues
   const keyPreview = apiKey.substring(0, 12) + '...'
 
   const anthropic = new Anthropic({
