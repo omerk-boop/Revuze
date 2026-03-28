@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Loader2, AlertCircle, GripVertical, Info, X } from 'lucide-react'
 import type { WidgetType } from '../../types/dashboard'
+import type { Granularity } from '../../utils/aggregateTimeSeries'
 
 const TYPE_ACCENT: Partial<Record<WidgetType, string>> = {
   kpi_card:               'border-t-brand-500',
@@ -34,10 +35,12 @@ interface WidgetWrapperProps {
   loading?: boolean
   error?: string | null
   onDelete?: () => void
+  granularity?: Granularity
+  onGranularityChange?: (g: Granularity) => void
   children: ReactNode
 }
 
-export default function WidgetWrapper({ title, type, loading, error, onDelete, children }: WidgetWrapperProps) {
+export default function WidgetWrapper({ title, type, loading, error, onDelete, granularity, onGranularityChange, children }: WidgetWrapperProps) {
   const accent = type ? (TYPE_ACCENT[type] ?? 'border-t-slate-400') : 'border-t-slate-300'
   const description = type ? TYPE_DESCRIPTIONS[type] : undefined
 
@@ -45,6 +48,25 @@ export default function WidgetWrapper({ title, type, loading, error, onDelete, c
     <div className={`bg-white rounded-xl border border-slate-200 shadow-widget flex flex-col h-full border-t-2 ${accent} overflow-hidden`}>
       <div className="group flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 bg-slate-50/80 shrink-0">
         <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide truncate flex-1">{title}</h3>
+
+        {/* Granularity toggle — shown for time-series widgets */}
+        {onGranularityChange && granularity && (
+          <div className="flex items-center gap-0.5 bg-slate-100 rounded-md p-0.5 shrink-0">
+            {(['week', 'month', 'quarter'] as Granularity[]).map((g) => (
+              <button
+                key={g}
+                onClick={() => onGranularityChange(g)}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
+                  granularity === g
+                    ? 'bg-white text-slate-700 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                {g === 'week' ? 'W' : g === 'month' ? 'M' : 'Q'}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Info tooltip */}
         {description && (

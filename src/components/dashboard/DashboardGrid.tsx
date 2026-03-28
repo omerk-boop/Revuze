@@ -4,6 +4,7 @@ import type { Layout } from 'react-grid-layout'
 import { useToken } from '../../context/TokenContext'
 import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, TopicsTableConfig, TopicsScatterConfig, CustomChartConfig, CustomTableConfig } from '../../types/dashboard'
 import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse, ProductsResponse, BrandTimeSeriesData, StarRatingTimeSeriesData } from '../../types/api'
+import { type Granularity, aggregateTimeSeries, aggregateBrandSeries, aggregateStarSeries } from '../../utils/aggregateTimeSeries'
 import { useWidgetData } from '../../hooks/useWidgetData'
 import { getDraggingItem } from '../../utils/dragState'
 import type { LibraryItem } from '../../utils/dragState'
@@ -25,28 +26,44 @@ import 'react-resizable/css/styles.css'
 
 // ─── Widget renderer ──────────────────────────────────────────────────────────
 
+const GRANULARITY_TYPES = new Set<string>(['time_series', 'brand_reviews_overtime', 'stacked_bar', 'star_rating_bar'])
+
 function WidgetRenderer({ widget, dashboard, token, onDelete }: { widget: Widget; dashboard: Dashboard; token: string | null; onDelete?: () => void }) {
   const { data, loading, error } = useWidgetData(widget, dashboard.filter, dashboard.compare_range, token)
+  const [granularity, setGranularity] = useState<Granularity>('week')
+  const supportsGranularity = GRANULARITY_TYPES.has(widget.type)
 
   const renderContent = () => {
     if (!data) return null
     switch (widget.type) {
       case 'kpi_card':
         return <KPICard data={data as StatisticsTotals} metric={(widget.config as KPICardConfig).metric} />
-      case 'time_series':
-        return <TimeSeriesChart data={data as TimeSeriesResponse} metrics={(widget.config as TimeSeriesConfig).metrics} />
+      case 'time_series': {
+        const raw = data as TimeSeriesResponse
+        const aggregated = { data: aggregateTimeSeries(raw.data ?? [], granularity) }
+        return <TimeSeriesChart data={aggregated as TimeSeriesResponse} metrics={(widget.config as TimeSeriesConfig).metrics} />
+      }
       case 'topics_table':
         return <TopicsTable data={data as TopicsTrendsResponse} config={widget.config as TopicsTableConfig} />
       case 'topics_scatter':
         return <TopicsScatter data={data as TopicsTrendsResponse} limit={(widget.config as TopicsScatterConfig).limit} />
       case 'products_table':
         return <ProductsTable data={data as ProductsResponse} />
-      case 'brand_reviews_overtime':
-        return <BrandReviewsChart data={data as BrandTimeSeriesData} />
-      case 'stacked_bar':
-        return <StackedBarChart data={data as BrandTimeSeriesData} />
-      case 'star_rating_bar':
-        return <StarRatingBarChart data={data as StarRatingTimeSeriesData} />
+      case 'brand_reviews_overtime': {
+        const raw = data as BrandTimeSeriesData
+        const aggregated: BrandTimeSeriesData = { brands: raw.brands, points: aggregateBrandSeries(raw.points, raw.brands, granularity) }
+        return <BrandReviewsChart data={aggregated} />
+      }
+      case 'stacked_bar': {
+        const raw = data as BrandTimeSeriesData
+        const aggregated: BrandTimeSeriesData = { brands: raw.brands, points: aggregateBrandSeries(raw.points, raw.brands, granularity) }
+        return <StackedBarChart data={aggregated} />
+      }
+      case 'star_rating_bar': {
+        const raw = data as StarRatingTimeSeriesData
+        const aggregated: StarRatingTimeSeriesData = { points: aggregateStarSeries(raw.points, granularity) }
+        return <StarRatingBarChart data={aggregated} />
+      }
       case 'custom_chart': {
         const cfg = widget.config as CustomChartConfig
         return <DynamicChart data={data} transformCode={cfg.transformCode} />
@@ -62,7 +79,15 @@ function WidgetRenderer({ widget, dashboard, token, onDelete }: { widget: Widget
 
   return (
     <WidgetErrorBoundary title={widget.title}>
-      <WidgetWrapper title={widget.title} type={widget.type} loading={loading} error={error} onDelete={onDelete}>
+      <WidgetWrapper
+        title={widget.title}
+        type={widget.type}
+        loading={loading}
+        error={error}
+        onDelete={onDelete}
+        granularity={supportsGranularity ? granularity : undefined}
+        onGranularityChange={supportsGranularity ? setGranularity : undefined}
+      >
         {renderContent()}
       </WidgetWrapper>
     </WidgetErrorBoundary>

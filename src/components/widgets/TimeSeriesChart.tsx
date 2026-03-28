@@ -8,7 +8,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { format, parseISO } from 'date-fns'
 import type { TimeSeriesResponse } from '../../types/api'
 
 interface TimeSeriesChartProps {
@@ -23,10 +22,10 @@ const METRIC_DISPLAY: Record<string, { label: string; color: string; yAxisId: st
 }
 
 export default function TimeSeriesChart({ data, metrics }: TimeSeriesChartProps) {
+  // data.date is already formatted by the aggregator (aggregateTimeSeries)
   const chartData = data.data.map((d) => ({
     ...d,
-    date: format(parseISO(d.date), 'MMM d'),
-    reviews_star_rating: parseFloat(d.reviews_star_rating.toFixed(2)),
+    reviews_star_rating: parseFloat(Number(d.reviews_star_rating).toFixed(2)),
   }))
 
   const showVolume = metrics.includes('volume')
