@@ -17,6 +17,7 @@ import ChatPanel from '../components/chat/ChatPanel'
 import { exportDashboardToSheets } from '../services/exportToSheets'
 import { exportDashboardToPptx } from '../services/exportToPptx'
 import { useBrands } from '../hooks/useBrands'
+import { useCatalogOptions } from '../hooks/useCatalogOptions'
 
 export default function DashboardPage() {
   const { id } = useParams<{ id: string }>()
@@ -39,9 +40,13 @@ export default function DashboardPage() {
   const [showExportMenu, setShowExportMenu] = useState(false)
   const exportMenuRef = useRef<HTMLDivElement>(null)
 
-  const { brands: availableBrands, loading: brandsLoading } = useBrands(
-    dashboard?.filter.range ?? { start_date: '2024-03-01', end_date: '2026-02-28', range_type: 'lastTwentyFourMonths' }
-  )
+  const filterRange = dashboard?.filter.range ?? { start_date: '2024-03-01', end_date: '2026-02-28', range_type: 'lastTwentyFourMonths' }
+  const { brands: availableBrands, loading: brandsLoading } = useBrands(filterRange)
+  const {
+    departments: availableDepartments,
+    groups: availableGroups,
+    loading: catalogLoading,
+  } = useCatalogOptions(filterRange, dashboard?.filter.departments ?? [])
 
   useEffect(() => {
     if (id) {
@@ -401,6 +406,9 @@ export default function DashboardPage() {
               onChange={handleFilterChange}
               availableBrands={availableBrands}
               brandsLoading={brandsLoading}
+              availableDepartments={availableDepartments}
+              availableGroups={availableGroups}
+              catalogLoading={catalogLoading}
             />
 
             {/* Grid canvas */}

@@ -38,7 +38,10 @@ export const fetchTopicsTrends = (body: ApiRequestBody): Promise<TopicsTrendsRes
   client.post('/topics/trends', body).then((r) => r.data)
 
 export const fetchCatalogTotals = (body: {
-  filter: { range: { start_date: string; end_date: string } }
+  filter: {
+    range: { start_date: string; end_date: string }
+    departments?: string[]
+  }
 }): Promise<CatalogTotals> => client.post('/catalog/totals', body).then((r) => r.data)
 
 export const fetchProducts = (
