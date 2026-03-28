@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft, Lock, Unlock, MessageSquare } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Dashboard, Widget } from '../types/dashboard'
-import { getDashboard, getDashboards } from '../services/storage'
+import { getDashboard, getDashboards, saveDashboard } from '../services/storage'
 import { useDashboards } from '../hooks/useDashboards'
 import { setDraggingItem } from '../utils/dragState'
 import type { LibraryItem } from '../utils/dragState'
@@ -121,10 +121,12 @@ export default function DashboardPage() {
   }
 
   const handleWidgetDelete = (id: string) => {
-    if (!dashboard) return
-    const updated = { ...dashboard, widgets: dashboard.widgets.filter((w) => w.id !== id) }
-    setDashboard(updated)
-    updateDashboard(updated)
+    setDashboard((prev) => {
+      if (!prev) return prev
+      const updated = { ...prev, widgets: prev.widgets.filter((w) => w.id !== id) }
+      saveDashboard(updated)   // direct write, no refresh() cascade
+      return updated
+    })
     setDirty(true)
     setSaved(false)
   }
@@ -162,7 +164,7 @@ export default function DashboardPage() {
     setNameError('')
     const updated = { ...dashboard, name: trimmed }
     setDashboard(updated)
-    updateDashboard(updated)   // persist immediately — no separate Save click needed for rename
+    saveDashboard(updated)   // persist immediately — no separate Save click needed for rename
     setEditingName(false)
     setDirty(true)
   }

@@ -125,10 +125,15 @@ TRANSFORM CODE RULES:
 - chartData: array of plain objects, one per x-axis point
 - xKey: string — the property name used for the x-axis
 - series: array of { kind, dataKey, name, color, stackId?, yAxisId? }
-  - kind: "bar" | "line" | "area"
+  - kind: "bar" | "line" | "area" | "pie"
+  - For "pie": chartData items need a name field (set xKey to that field) and a value field (dataKey). Use one series entry with kind "pie". Colors are auto-assigned per slice.
   - stackId: set same string on multiple bars to stack them
   - yAxisId: "left" (default) or "right" for dual-axis
 - Do NOT use JSX, import statements, or require(). Plain ES6 only.
+
+EXAMPLE — pie chart of review share by brand (use endpoint "statistics_totals" or "products"):
+const items = data.products.slice(0, 8).map(p => ({ name: p.brand, value: p.reviews_data.reviews }))
+return { chartData: items, xKey: 'name', series: [{ kind: 'pie', dataKey: 'value', name: 'Reviews', color: '' }] }
 
 EXAMPLE — area chart of sentiment over time:
 const pts = data.data.map(d => ({ week: dateFns.format(dateFns.parseISO(d.date), 'MMM d'), sentiment: Math.round(d.sentiment), volume: d.volume }))

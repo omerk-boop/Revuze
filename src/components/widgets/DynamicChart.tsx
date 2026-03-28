@@ -22,7 +22,7 @@ import { format, parseISO } from 'date-fns'
 // Claude writes a JS function body that receives `data` and `dateFns` and returns this.
 
 export interface SeriesSpec {
-  kind: 'bar' | 'line' | 'area'
+  kind: 'bar' | 'line' | 'area' | 'pie'
   dataKey: string
   name: string
   color: string
@@ -71,6 +71,36 @@ export default function DynamicChart({ data, transformCode }: DynamicChartProps)
     return <div className="flex items-center justify-center h-full text-xs text-slate-400">No data</div>
   }
 
+  // ── Pie chart ──────────────────────────────────────────────────────────────
+  if (spec.series.some((s) => s.kind === 'pie')) {
+    const pieSeries = spec.series.find((s) => s.kind === 'pie')!
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+          <Pie
+            data={spec.chartData}
+            dataKey={pieSeries.dataKey}
+            nameKey={spec.xKey}
+            cx="50%"
+            cy="50%"
+            outerRadius="70%"
+            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+            labelLine={false}
+          >
+            {spec.chartData.map((_, i) => (
+              <Cell key={i} fill={FALLBACK_COLORS[i % FALLBACK_COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+          />
+          <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+        </PieChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  // ── Composed chart (bar / line / area) ────────────────────────────────────
   const hasRight = spec.series.some(s => s.yAxisId === 'right')
 
   return (
