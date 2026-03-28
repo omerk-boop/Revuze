@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft, Lock, Unlock, MessageSquare, Sheet } from 'lucide-react'
+import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft, Lock, Unlock, MessageSquare, Sheet, Presentation, ChevronDown } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Dashboard, Widget } from '../types/dashboard'
 import { getDashboard, getDashboards, saveDashboard } from '../services/storage'
@@ -15,6 +15,7 @@ import AddRowPanel from '../components/builder/AddRowPanel'
 import WidgetLibrary from '../components/builder/WidgetLibrary'
 import ChatPanel from '../components/chat/ChatPanel'
 import { exportDashboardToSheets } from '../services/exportToSheets'
+import { exportDashboardToPptx } from '../services/exportToPptx'
 import { useBrands } from '../hooks/useBrands'
 
 export default function DashboardPage() {
@@ -35,6 +36,8 @@ export default function DashboardPage() {
   const [showChat, setShowChat] = useState(false)
   const [locked, setLocked] = useState(false)
   const [exportProgress, setExportProgress] = useState<string | null>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
 
   const { brands: availableBrands, loading: brandsLoading } = useBrands(
     dashboard?.filter.range ?? { start_date: '2024-03-01', end_date: '2026-02-28', range_type: 'lastTwentyFourMonths' }
@@ -47,6 +50,17 @@ export default function DashboardPage() {
       else navigate('/')
     }
   }, [id, navigate])
+
+  useEffect(() => {
+    if (!showExportMenu) return
+    const handler = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showExportMenu])
 
   // ── Widget mutation helpers ────────────────────────────────────────────────
 
@@ -141,10 +155,21 @@ export default function DashboardPage() {
     setDirty(true); setSaved(false)
   }
 
-  const handleExport = async () => {
+  const handleExportSheets = async () => {
     if (!dashboard || exportProgress !== null) return
+    setShowExportMenu(false)
     try {
       await exportDashboardToSheets(dashboard, setExportProgress)
+    } finally {
+      setExportProgress(null)
+    }
+  }
+
+  const handleExportPptx = async () => {
+    if (!dashboard || exportProgress !== null) return
+    setShowExportMenu(false)
+    try {
+      await exportDashboardToPptx(dashboard, setExportProgress)
     } finally {
       setExportProgress(null)
     }
@@ -278,15 +303,43 @@ export default function DashboardPage() {
             Chat
           </button>
 
-          <button
-            onClick={handleExport}
-            disabled={exportProgress !== null || dashboard.widgets.length === 0}
-            title="Export to Google Sheets (.xlsx)"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 text-xs font-semibold hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <Sheet className="w-3.5 h-3.5" />
-            {exportProgress !== null ? 'Exporting…' : 'Export'}
-          </button>
+          <div ref={exportMenuRef} className="relative">
+            <button
+              onClick={() => setShowExportMenu((v) => !v)}
+              disabled={exportProgress !== null || dashboard.widgets.length === 0}
+              title="Export dashboard"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 text-xs font-semibold hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Sheet className="w-3.5 h-3.5" />
+              {exportProgress !== null ? 'Exporting…' : 'Export'}
+              <ChevronDown className="w-3 h-3 ml-0.5" />
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                <button
+                  onClick={handleExportSheets}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                >
+                  <Sheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    <span className="font-semibold block">Google Sheets</span>
+                    <span className="text-slate-400">Downloads .xls file</span>
+                  </span>
+                </button>
+                <div className="h-px bg-slate-100" />
+                <button
+                  onClick={handleExportPptx}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                >
+                  <Presentation className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span>
+                    <span className="font-semibold block">PowerPoint</span>
+                    <span className="text-slate-400">Downloads .pptx file</span>
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={() => setShowImport(true)}
