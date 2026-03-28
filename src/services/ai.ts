@@ -150,6 +150,42 @@ return { chartData, xKey: 'topic', series: [{ kind: 'bar', dataKey: 'volume', na
     },
   },
   {
+    name: 'add_custom_table',
+    description: `Add a fully custom table for any tabular view the user requests.
+Use this for: any list, ranking, comparison table, summary table — whenever the user asks for a table view that the built-in tools don't cover.
+
+ENDPOINT OPTIONS (same as add_custom_chart):
+- "key_metrics_overtime" → { data: [{date, volume, sentiment, reviews_star_rating}] }
+- "topics_trends"        → { growing: { data: [{name, volume, sentiment, volume_trend, sentiment_trend}] }, decreasing: { data: [...] } }
+- "statistics_totals"    → { sentiment, volume, reviews_star_rating, pdp_star_rating, products, brands }
+- "products"             → { products: [{name, brand, sentiment_data:{sentiment}, reviews_data:{reviews}, reviews_star_rating:{avg}}] }
+
+TRANSFORM CODE RULES:
+- Receives one argument: \`data\` (raw API response)
+- Must return: { columns: [{key, label, align?}], rows: [plain objects] }
+- align: "left" (default) | "right" | "center"
+- Do NOT use JSX, import statements, or require(). Plain ES6 only.
+
+EXAMPLE — products table:
+const rows = data.products.slice(0, 20).map(p => ({ name: p.name, brand: p.brand, reviews: p.reviews_data.reviews.toLocaleString(), rating: p.reviews_star_rating.avg.toFixed(2), sentiment: Math.round(p.sentiment_data.sentiment) + '%' }))
+return { columns: [{ key: 'name', label: 'Product' }, { key: 'brand', label: 'Brand' }, { key: 'reviews', label: 'Reviews', align: 'right' }, { key: 'rating', label: 'Rating', align: 'right' }, { key: 'sentiment', label: 'Sentiment', align: 'right' }], rows }
+
+EXAMPLE — top topics table:
+const topics = [...data.growing.data, ...data.decreasing.data].sort((a,b) => b.volume - a.volume).slice(0, 15)
+const rows = topics.map(t => ({ topic: t.name, volume: t.volume.toLocaleString(), volTrend: (t.volume_trend > 0 ? '+' : '') + t.volume_trend.toFixed(1) + '%', sentiment: Math.round(t.sentiment) + '%' }))
+return { columns: [{ key: 'topic', label: 'Topic' }, { key: 'volume', label: 'Volume', align: 'right' }, { key: 'volTrend', label: 'Vol Trend', align: 'right' }, { key: 'sentiment', label: 'Sentiment', align: 'right' }], rows }`,
+    input_schema: {
+      type: 'object',
+      properties: {
+        title:          { type: 'string' },
+        endpoint:       { type: 'string', enum: ['key_metrics_overtime', 'topics_trends', 'statistics_totals', 'products'] },
+        transform_code: { type: 'string', description: 'JS function body. Receives (data). Must return {columns:[{key,label,align?}], rows:[...]}.' },
+        x: { type: 'number' }, y: { type: 'number' },
+      },
+      required: ['title', 'endpoint', 'transform_code', 'x', 'y'],
+    },
+  },
+  {
     name: 'add_star_rating_bar',
     description: 'Add a stacked bar chart showing review VOLUME broken down by star rating (1★–5★) over time. Each bar is a week; each segment is a star rating coloured red→green. Use for: "star rating distribution", "rating breakdown", "how many 1-star vs 5-star reviews", "review quality distribution".',
     input_schema: {
@@ -185,6 +221,7 @@ babylist→"www.babylist.com", kohls→"www.kohls.com", buybuy baby→"buybuybab
 - "bar chart by brand" / "stacked bar" / "brand volume column" → add_stacked_bar
 - "brand comparison" / "compare brands" / "brand lines" → add_brand_lines
 - "topics table" / "growing topics" / "declining topics" → add_topics_table
+- "table" / "list" / "show me X as a table" / any custom tabular view → add_custom_table
 - ANY other chart (area, mixed, dual-axis, custom grouping, novel visual) → add_custom_chart
 - "scatter" / "topic map" / "sentiment vs volume" → add_topics_scatter
 - "products" / "product list" / "catalog" → add_products_table
@@ -225,6 +262,8 @@ function toolCallToWidget(name: string, input: Record<string, any>): Widget | nu
       return { id: uuidv4(), type: 'star_rating_bar', title: input.title, config: {}, layout }
     case 'add_custom_chart':
       return { id: uuidv4(), type: 'custom_chart', title: input.title, config: { endpoint: input.endpoint, transformCode: input.transform_code }, layout }
+    case 'add_custom_table':
+      return { id: uuidv4(), type: 'custom_table', title: input.title, config: { endpoint: input.endpoint, transformCode: input.transform_code }, layout }
     default:
       return null
   }

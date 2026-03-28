@@ -6,7 +6,7 @@ import {
   fetchTopicsTrends,
   fetchProducts,
 } from '../services/api'
-import type { ProductsTableConfig, BrandReviewsOvertimeConfig, StackedBarConfig, CustomChartConfig } from '../types/dashboard'
+import type { ProductsTableConfig, BrandReviewsOvertimeConfig, StackedBarConfig, CustomChartConfig, CustomTableConfig } from '../types/dashboard'
 import type { BrandTimeSeriesData, StarRatingTimeSeriesData } from '../types/api'
 
 interface WidgetDataState<T = unknown> {
@@ -88,8 +88,9 @@ export const useWidgetData = (
         })
         break
       }
-      case 'custom_chart': {
-        const cfg = widget.config as CustomChartConfig
+      case 'custom_chart':
+      case 'custom_table': {
+        const cfg = widget.config as CustomChartConfig | CustomTableConfig
         switch (cfg.endpoint) {
           case 'key_metrics_overtime': fetchFn = fetchKeyMetricsOvertime(body); break
           case 'topics_trends':        fetchFn = fetchTopicsTrends(body); break

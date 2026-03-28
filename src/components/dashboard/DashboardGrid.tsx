@@ -2,7 +2,7 @@ import { useCallback, useRef, useState, useEffect } from 'react'
 import GridLayout from 'react-grid-layout'
 import type { Layout } from 'react-grid-layout'
 import { useToken } from '../../context/TokenContext'
-import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, TopicsTableConfig, TopicsScatterConfig, CustomChartConfig } from '../../types/dashboard'
+import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, TopicsTableConfig, TopicsScatterConfig, CustomChartConfig, CustomTableConfig } from '../../types/dashboard'
 import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse, ProductsResponse, BrandTimeSeriesData, StarRatingTimeSeriesData } from '../../types/api'
 import { useWidgetData } from '../../hooks/useWidgetData'
 import { getDraggingItem } from '../../utils/dragState'
@@ -18,6 +18,7 @@ import BrandReviewsChart from '../widgets/BrandReviewsChart'
 import StackedBarChart from '../widgets/StackedBarChart'
 import StarRatingBarChart from '../widgets/StarRatingBarChart'
 import DynamicChart from '../widgets/DynamicChart'
+import DynamicTable from '../widgets/DynamicTable'
 
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -49,6 +50,10 @@ function WidgetRenderer({ widget, dashboard, token, onDelete }: { widget: Widget
       case 'custom_chart': {
         const cfg = widget.config as CustomChartConfig
         return <DynamicChart data={data} transformCode={cfg.transformCode} />
+      }
+      case 'custom_table': {
+        const cfg = widget.config as CustomTableConfig
+        return <DynamicTable data={data} transformCode={cfg.transformCode} />
       }
       default:
         return null

@@ -9,6 +9,7 @@ const TYPE_ACCENT: Partial<Record<WidgetType, string>> = {
   stacked_bar:            'border-t-teal-500',
   star_rating_bar:        'border-t-amber-500',
   custom_chart:           'border-t-brand-400',
+  custom_table:           'border-t-slate-400',
   topics_table:           'border-t-emerald-500',
   topics_scatter:         'border-t-amber-500',
   products_table:         'border-t-indigo-500',
@@ -24,6 +25,7 @@ const TYPE_DESCRIPTIONS: Partial<Record<WidgetType, string>> = {
   stacked_bar:            'Weekly review volume stacked by brand — shows each brand\'s share of total volume over time.',
   star_rating_bar:        'Weekly review volume stacked by star rating (1★–5★, red→green) — shows the quality distribution of reviews over time.',
   custom_chart:           'AI-generated chart — the visualization was created dynamically based on your prompt.',
+  custom_table:           'AI-generated table — the columns and rows were defined dynamically based on your prompt.',
 }
 
 interface WidgetWrapperProps {
