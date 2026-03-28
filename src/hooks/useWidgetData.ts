@@ -121,6 +121,19 @@ export const useWidgetData = (
             case 'topics_trends':        fetchFn = fetchTopicsTrends(body); break
             case 'statistics_totals':    fetchFn = fetchStatisticsTotals(body); break
             case 'products':             fetchFn = fetchProducts({ ...body, size: 50 }); break
+            case 'star_ratings_summary':
+              // 5 parallel calls, one per star — returns { '1': totalVol, '2': ..., '5': ... }
+              fetchFn = Promise.all(
+                ([1, 2, 3, 4, 5] as const).map((star) =>
+                  fetchKeyMetricsOvertime({ ...body, filter: { ...effectiveFilter, star_ratings: [star] } })
+                    .then((r) => ({ star, total: (r.data ?? []).reduce((sum, pt) => sum + pt.volume, 0) }))
+                )
+              ).then((results) => {
+                const summary: Record<string, number> = {}
+                results.forEach(({ star, total }) => { summary[String(star)] = total })
+                return summary
+              })
+              break
             default:                     fetchFn = fetchKeyMetricsOvertime(body)
           }
         }

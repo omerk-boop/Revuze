@@ -114,10 +114,12 @@ Use this for: area charts, mixed bar+line, dual-axis charts, custom groupings, p
 You write a small JS transform that converts raw API data into a chart spec. The renderer handles the rest.
 
 ENDPOINT OPTIONS:
-- "key_metrics_overtime" → { data: [{date, volume, sentiment, reviews_star_rating}] }
-- "topics_trends"        → { growing: { data: [{name, volume, sentiment, volume_trend, sentiment_trend}] }, decreasing: { data: [...] } }
-- "statistics_totals"    → { sentiment, volume, reviews_star_rating, pdp_star_rating, products, brands, ...trends }
-- "products"             → { products: [{name, brand, sentiment_data:{sentiment}, reviews_data:{reviews}, reviews_star_rating:{avg}}] }
+- "key_metrics_overtime"  → { data: [{date, volume, sentiment, reviews_star_rating}] }
+- "topics_trends"         → { growing: { data: [{name, volume, sentiment, volume_trend, sentiment_trend}] }, decreasing: { data: [...] } }
+- "statistics_totals"     → { sentiment, volume, reviews_star_rating, pdp_star_rating, products, brands, ...trends }
+- "products"              → { products: [{name, brand, sentiment_data:{sentiment}, reviews_data:{reviews}, reviews_star_rating:{avg}}] }
+- "star_ratings_summary"  → { '1': totalVolume, '2': totalVolume, '3': totalVolume, '4': totalVolume, '5': totalVolume }
+  USE THIS (not key_metrics_overtime) for ANY chart showing distribution of 1★–5★ review counts.
 
 TRANSFORM CODE RULES:
 - Receives two arguments: \`data\` (raw API response as above) and \`dateFns\` ({format, parseISO})
@@ -131,8 +133,12 @@ TRANSFORM CODE RULES:
   - yAxisId: "left" (default) or "right" for dual-axis
 - Do NOT use JSX, import statements, or require(). Plain ES6 only.
 
-EXAMPLE — pie chart of review share by brand (use endpoint "statistics_totals" or "products"):
-const items = data.products.slice(0, 8).map(p => ({ name: p.brand, value: p.reviews_data.reviews }))
+EXAMPLE — pie chart of star rating distribution (endpoint "star_ratings_summary"):
+const items = [1,2,3,4,5].map(s => ({ star: s + '★', count: data[String(s)] || 0 }))
+return { chartData: items, xKey: 'star', series: [{ kind: 'pie', dataKey: 'count', name: 'Reviews', color: '' }] }
+
+EXAMPLE — pie chart of review share by brand (endpoint "products"):
+const brands = {}; data.products.forEach(p => { brands[p.brand] = (brands[p.brand]||0) + p.reviews_data.reviews }); const items = Object.entries(brands).map(([name,value]) => ({ name, value })).sort((a,b)=>b.value-a.value).slice(0,8)
 return { chartData: items, xKey: 'name', series: [{ kind: 'pie', dataKey: 'value', name: 'Reviews', color: '' }] }
 
 EXAMPLE — area chart of sentiment over time:
@@ -166,6 +172,7 @@ ENDPOINT OPTIONS:
 - "products"             → { products: [{name, brand, sentiment_data:{sentiment}, reviews_data:{reviews}, reviews_star_rating:{avg}}] }
 - "products_monthly"     → { months: ["2025-03","2025-04",...], byMonth: { "2025-03": [{name,brand,reviews_data:{reviews},...}], ... } }
   USE THIS for any table where columns = months (pivot tables, monthly breakdowns, time-series tables)
+- "star_ratings_summary" → { '1': totalVolume, '2': totalVolume, '3': totalVolume, '4': totalVolume, '5': totalVolume }
 
 TRANSFORM CODE RULES:
 - Receives one argument: \`data\` (raw API response as above)
