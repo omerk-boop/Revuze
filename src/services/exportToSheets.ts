@@ -3,7 +3,6 @@
  * Each widget becomes one sheet; an Overview sheet is prepended with totals.
  * The file can be opened directly in Google Sheets (File → Import, or drag to Drive).
  */
-import writeXlsxFile from 'write-excel-file/browser'
 import { format, parseISO, startOfMonth, endOfMonth, addMonths, isAfter } from 'date-fns'
 import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, BrandReviewsOvertimeConfig, StackedBarConfig, CustomChartConfig, CustomTableConfig, ProductsTableConfig } from '../types/dashboard'
 import type { ApiRequestBody } from './api'
@@ -231,25 +230,53 @@ function sheetName(title: string, index: number): string {
   return safe || `Widget ${index + 1}`
 }
 
-// ─── Rows → write-excel-file schema ──────────────────────────────────────────
-// write-excel-file expects [ [headerRow], [dataRow], ... ] where each cell is { value, type? }
+// ─── SpreadsheetML XML builder — zero dependencies ───────────────────────────
 
-type WEFCell = { value: string | number; type?: typeof String | typeof Number }
-type WEFRow = WEFCell[]
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
-function toWefSheet(rows: Row[]): WEFRow[] {
-  if (rows.length === 0) return []
+function rowToXml(values: (string | number | null)[], isHeader = false): string {
+  const cells = values.map(v => {
+    if (v === null || v === undefined) return '<Cell><Data ss:Type="String"></Data></Cell>'
+    if (typeof v === 'number') return `<Cell><Data ss:Type="Number">${v}</Data></Cell>`
+    return `<Cell${isHeader ? ' ss:StyleID="h"' : ''}><Data ss:Type="String">${esc(String(v))}</Data></Cell>`
+  })
+  return `<Row>${cells.join('')}</Row>`
+}
+
+function sheetXml(rows: Row[], name: string): string {
+  if (rows.length === 0) return ''
   const keys = Object.keys(rows[0])
-  const header: WEFRow = keys.map(k => ({ value: k, type: String }))
-  const data: WEFRow[] = rows.map(row =>
-    keys.map(k => {
-      const v = row[k]
-      if (v === null || v === undefined) return { value: '', type: String }
-      if (typeof v === 'number')         return { value: v, type: Number }
-      return { value: String(v), type: String }
-    })
-  )
-  return [header, ...data]
+  const headerXml = rowToXml(keys, true)
+  const dataXml = rows.map(r => rowToXml(keys.map(k => r[k] ?? null))).join('\n        ')
+  return `  <Worksheet ss:Name="${esc(name)}">
+    <Table>
+        ${headerXml}
+        ${dataXml}
+    </Table>
+  </Worksheet>`
+}
+
+function buildWorkbook(sheets: { rows: Row[]; name: string }[]): string {
+  const wsXml = sheets.filter(s => s.rows.length > 0).map(s => sheetXml(s.rows, s.name)).join('\n')
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+          xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Styles>
+    <Style ss:ID="h"><Font ss:Bold="1"/></Style>
+  </Styles>
+${wsXml}
+</Workbook>`
+}
+
+function triggerDownload(content: string, filename: string): void {
+  const blob = new Blob([content], { type: 'application/vnd.ms-excel;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
 }
 
 // ─── Main export ─────────────────────────────────────────────────────────────
@@ -264,37 +291,36 @@ export async function exportDashboardToSheets(
     group_by_product_line: false,
   }
 
-  const sheets: WEFRow[][] = []
-  const names: string[] = []
+  const sheets: { rows: Row[]; name: string }[] = []
 
   // Overview sheet
   onProgress?.('Fetching overview…')
   try {
     const totals = await fetchStatisticsTotals(body)
-    const overviewRows: Row[] = [
-      { Metric: 'Total Reviews',         Value: totals.volume,                                          'Trend vs Prior (%)': Math.round(totals.volume_trend * 100) / 100 },
-      { Metric: 'Sentiment (%)',         Value: Math.round(totals.sentiment * 100),                    'Trend vs Prior (%)': Math.round(totals.sentiment_trend * 100) / 100 },
-      { Metric: 'Avg Star Rating',       Value: Math.round(totals.reviews_star_rating * 100) / 100,    'Trend vs Prior (%)': Math.round(totals.reviews_star_rating_trend * 100) / 100 },
-      { Metric: 'PDP Star Rating',       Value: Math.round(totals.pdp_star_rating * 100) / 100,        'Trend vs Prior (%)': Math.round(totals.pdp_star_rating_trend * 100) / 100 },
-      { Metric: 'Products Tracked',      Value: totals.products,                                        'Trend vs Prior (%)': null },
-      { Metric: 'Brands Tracked',        Value: totals.brands,                                          'Trend vs Prior (%)': null },
-    ]
-    sheets.push(toWefSheet(overviewRows))
-    names.push('Overview')
-  } catch { /* skip overview if fetch fails */ }
+    sheets.push({
+      name: 'Overview',
+      rows: [
+        { Metric: 'Total Reviews',    Value: totals.volume,                                         'Trend vs Prior (%)': Math.round(totals.volume_trend * 100) / 100 },
+        { Metric: 'Sentiment (%)',    Value: Math.round(totals.sentiment * 100),                    'Trend vs Prior (%)': Math.round(totals.sentiment_trend * 100) / 100 },
+        { Metric: 'Avg Star Rating',  Value: Math.round(totals.reviews_star_rating * 100) / 100,   'Trend vs Prior (%)': Math.round(totals.reviews_star_rating_trend * 100) / 100 },
+        { Metric: 'PDP Star Rating',  Value: Math.round(totals.pdp_star_rating * 100) / 100,       'Trend vs Prior (%)': Math.round(totals.pdp_star_rating_trend * 100) / 100 },
+        { Metric: 'Products Tracked', Value: totals.products,                                       'Trend vs Prior (%)': null },
+        { Metric: 'Brands Tracked',   Value: totals.brands,                                         'Trend vs Prior (%)': null },
+      ],
+    })
+  } catch { /* skip if fetch fails */ }
 
   // One sheet per widget
   for (let i = 0; i < dashboard.widgets.length; i++) {
     const widget = dashboard.widgets[i]
     onProgress?.(`Fetching "${widget.title}" (${i + 1}/${dashboard.widgets.length})…`)
     const rows = await fetchWidgetData(widget, body)
-    if (rows.length === 0) continue
-    sheets.push(toWefSheet(rows))
-    names.push(sheetName(widget.title, i))
+    if (rows.length > 0) sheets.push({ rows, name: sheetName(widget.title, i) })
   }
 
   if (sheets.length === 0) return
 
-  const filename = `${dashboard.name.replace(/[^\w\s-]/g, '').trim() || 'Dashboard'}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
-  await writeXlsxFile(sheets, { sheets: names, fileName: filename })
+  const xml = buildWorkbook(sheets)
+  const filename = `${dashboard.name.replace(/[^\w\s-]/g, '').trim() || 'Dashboard'}_${format(new Date(), 'yyyy-MM-dd')}.xls`
+  triggerDownload(xml, filename)
 }
