@@ -187,15 +187,22 @@ export default function AIPromptBar({ dashboard, onGenerated, isNewDashboard = f
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (menu) {
-      const items = menu.kind === 'root' ? SLASH_COMMANDS : menu.command.options
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setMenu(m => m ? { ...m, selectedIndex: (m.selectedIndex + 1) % items.length } : m)
+        setMenu(m => {
+          if (!m) return m
+          const count = m.kind === 'root' ? SLASH_COMMANDS.length : m.command.options.length
+          return { ...m, selectedIndex: (m.selectedIndex + 1) % count }
+        })
         return
       }
       if (e.key === 'ArrowUp') {
         e.preventDefault()
-        setMenu(m => m ? { ...m, selectedIndex: (m.selectedIndex - 1 + items.length) % items.length } : m)
+        setMenu(m => {
+          if (!m) return m
+          const count = m.kind === 'root' ? SLASH_COMMANDS.length : m.command.options.length
+          return { ...m, selectedIndex: (m.selectedIndex - 1 + count) % count }
+        })
         return
       }
       if (e.key === 'Enter' || e.key === 'Tab') {
@@ -260,7 +267,7 @@ export default function AIPromptBar({ dashboard, onGenerated, isNewDashboard = f
         {menu && (
           <div
             ref={menuRef}
-            className="absolute bottom-full mb-2 left-0 right-0 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden"
+            className="absolute top-full mt-1 left-0 right-0 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden"
           >
             {menu.kind === 'root' ? (
               <>
