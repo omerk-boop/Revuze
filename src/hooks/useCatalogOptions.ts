@@ -42,7 +42,7 @@ export function useCatalogOptions(range: DateRange, selectedDepartments: string[
         ...(selectedDepartments.length > 0 ? { departments: selectedDepartments } : {}),
       },
     })
-      .then((data) => setGroups(data.groups ?? []))
+      .then((data) => setGroups(Array.isArray(data.groups) ? data.groups : []))
       .catch(() => {})
       .finally(() => setLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -220,7 +220,7 @@ export default function FilterPanel({
 
   const clearAll = () => onChange({ ...filter, domains: [], brand_names: [], star_ratings: [], departments: [], groups: [] })
 
-  const groupOptions = availableGroups.map((g) => ({ value: g.group_tag, label: g.group_name }))
+  const groupOptions = (Array.isArray(availableGroups) ? availableGroups : []).map((g) => ({ value: g.group_tag, label: g.group_name }))
   const showSegmentRow = availableDepartments.length > 0 || catalogLoading
 
   return (
