@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft, Lock, Unlock } from 'lucide-react'
+import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft, Lock, Unlock, MessageSquare } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Dashboard, Widget } from '../types/dashboard'
 import { getDashboard, getDashboards } from '../services/storage'
@@ -13,6 +13,7 @@ import DashboardGrid from '../components/dashboard/DashboardGrid'
 import ImportDashboardModal from '../components/builder/ImportDashboardModal'
 import AddRowPanel from '../components/builder/AddRowPanel'
 import WidgetLibrary from '../components/builder/WidgetLibrary'
+import ChatPanel from '../components/chat/ChatPanel'
 import { useBrands } from '../hooks/useBrands'
 
 export default function DashboardPage() {
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [dirty, setDirty] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showLibrary, setShowLibrary] = useState(true)
+  const [showChat, setShowChat] = useState(false)
   const [locked, setLocked] = useState(false)
 
   const { brands: availableBrands, loading: brandsLoading } = useBrands(
@@ -251,6 +253,19 @@ export default function DashboardPage() {
           </button>
 
           <button
+            onClick={() => setShowChat((v) => !v)}
+            title="Toggle data assistant"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+              showChat
+                ? 'bg-indigo-600 text-white'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            Chat
+          </button>
+
+          <button
             onClick={() => setShowImport(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-colors"
           >
@@ -326,6 +341,11 @@ export default function DashboardPage() {
 
           </div>
         </div>
+
+        {/* Chat panel */}
+        {showChat && (
+          <ChatPanel dashboard={dashboard} onClose={() => setShowChat(false)} />
+        )}
       </div>
 
       {showImport && (
