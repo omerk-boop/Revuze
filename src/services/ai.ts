@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { v4 as uuidv4 } from 'uuid'
-import type { Dashboard, Widget, DashboardFilter, DateRange } from '../types/dashboard'
+import type { Dashboard, Widget } from '../types/dashboard'
 import { DEFAULT_FILTER, DEFAULT_COMPARE_RANGE } from '../types/dashboard'
 import { getApiKey } from './apiKey'
 
@@ -10,21 +10,6 @@ import { getApiKey } from './apiKey'
 // are impossible by construction.
 
 const TOOLS: Anthropic.Tool[] = [
-  {
-    name: 'set_dashboard_info',
-    description: 'Set the dashboard name, description, and global filter. Call this once before adding widgets.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        name:        { type: 'string', description: 'Short dashboard title' },
-        description: { type: 'string', description: 'One-sentence description' },
-        date_range:  { type: 'string', enum: ['lastThreeMonths', 'lastSixMonths', 'lastTwelveMonths'], description: 'Time period for all widgets' },
-        domains:     { type: 'array', items: { type: 'string' }, description: 'Retailer domains to filter by, e.g. ["www.amazon.com"]' },
-        brand_names: { type: 'array', items: { type: 'string' }, description: 'Brand names to filter by' },
-      },
-      required: ['name'],
-    },
-  },
   {
     name: 'add_kpi_card',
     description: 'Add a single KPI metric card with trend vs prior period. Use for any single number, score, or count.',
@@ -156,12 +141,6 @@ babylist→"www.babylist.com", kohls→"www.kohls.com", buybuy baby→"buybuybab
 
 // ─── Tool-call → Widget mapping ───────────────────────────────────────────────
 
-const RANGE_DATES: Record<string, { start_date: string; end_date: string }> = {
-  lastThreeMonths:  { start_date: '2025-12-01', end_date: '2026-02-28' },
-  lastSixMonths:    { start_date: '2025-09-01', end_date: '2026-02-28' },
-  lastTwelveMonths: { start_date: '2025-03-01', end_date: '2026-02-28' },
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toolCallToWidget(name: string, input: Record<string, any>): Widget | null {
   const layout = {
@@ -243,40 +222,22 @@ export const generateDashboard = async (
     throw new Error((text as Anthropic.TextBlock | undefined)?.text || 'AI did not return any widgets. Try rephrasing your request.')
   }
 
-  // Separate dashboard info from widget tools
-  const infoCall = toolUses.find(t => t.name === 'set_dashboard_info')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const info = (infoCall?.input ?? {}) as Record<string, any>
-
   const widgets = toolUses
-    .filter(t => t.name !== 'set_dashboard_info')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map(t => toolCallToWidget(t.name, t.input as Record<string, any>))
     .filter((w): w is Widget => w !== null)
 
   if (widgets.length === 0) {
-    throw new Error('AI did not add any widgets. It may have only set dashboard info. Try a more specific request like "add a sentiment KPI card and a time series chart".')
-  }
-
-  // Build filter from info call
-  const rangeType = info.date_range ?? 'lastTwelveMonths'
-  const rangeDates = RANGE_DATES[rangeType] ?? RANGE_DATES.lastTwelveMonths
-  const range: DateRange = { range_type: rangeType, ...rangeDates }
-
-  const filter: DashboardFilter = {
-    ...DEFAULT_FILTER,
-    range,
-    domains:     Array.isArray(info.domains)     ? info.domains     : DEFAULT_FILTER.domains,
-    brand_names: Array.isArray(info.brand_names) ? info.brand_names : DEFAULT_FILTER.brand_names,
+    throw new Error('AI returned no recognised widget tools. Try rephrasing your request.')
   }
 
   return {
     mode: isAdding ? 'append' : 'replace',
     dashboard: {
-      name:          info.name        ?? 'My Dashboard',
-      description:   info.description ?? '',
-      filter,
-      compare_range: DEFAULT_COMPARE_RANGE,
+      // Derive a name from the prompt (truncated) — user can rename in the toolbar
+      name: prompt.length > 50 ? prompt.slice(0, 47) + '…' : prompt,
+      filter: existingDashboard?.filter ?? DEFAULT_FILTER,
+      compare_range: existingDashboard?.compare_range ?? DEFAULT_COMPARE_RANGE,
       widgets,
     },
   }
