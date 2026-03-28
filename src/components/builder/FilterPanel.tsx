@@ -10,15 +10,19 @@ interface FilterPanelProps {
 }
 
 const RANGE_OPTIONS = [
-  { value: 'lastThreeMonths',  label: '3M' },
-  { value: 'lastSixMonths',    label: '6M' },
-  { value: 'lastTwelveMonths', label: '12M' },
+  { value: 'lastThreeMonths',       label: '3M' },
+  { value: 'lastSixMonths',         label: '6M' },
+  { value: 'lastTwelveMonths',      label: '1Y' },
+  { value: 'lastTwentyFourMonths',  label: '2Y' },
+  { value: 'lastThirtySixMonths',   label: '3Y' },
 ]
 
 const RANGE_DATES: Record<string, { start_date: string; end_date: string }> = {
-  lastThreeMonths:  { start_date: '2025-12-01', end_date: '2026-02-28' },
-  lastSixMonths:    { start_date: '2025-09-01', end_date: '2026-02-28' },
-  lastTwelveMonths: { start_date: '2025-03-01', end_date: '2026-02-28' },
+  lastThreeMonths:      { start_date: '2025-12-01', end_date: '2026-02-28' },
+  lastSixMonths:        { start_date: '2025-09-01', end_date: '2026-02-28' },
+  lastTwelveMonths:     { start_date: '2025-03-01', end_date: '2026-02-28' },
+  lastTwentyFourMonths: { start_date: '2024-03-01', end_date: '2026-02-28' },
+  lastThirtySixMonths:  { start_date: '2023-03-01', end_date: '2026-02-28' },
 }
 
 const DOMAINS = [

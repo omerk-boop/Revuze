@@ -74,11 +74,11 @@ export default function TimeSeriesChart({ data, metrics }: TimeSeriesChartProps)
           return (
             <Line
               key={metric}
-              type="monotone"
+              type="natural"
               dataKey={metric}
               name={cfg.label}
               stroke={cfg.color}
-              strokeWidth={2}
+              strokeWidth={2.5}
               dot={false}
               yAxisId={cfg.yAxisId}
               activeDot={{ r: 4 }}

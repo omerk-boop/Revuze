@@ -111,11 +111,11 @@ export default function BrandReviewsChart({ data }: BrandReviewsChartProps) {
         {brands.map((brand, i) => (
           <Line
             key={brand}
-            type="monotone"
+            type="natural"
             dataKey={brand}
             name={brand}
             stroke={BRAND_COLORS[i % BRAND_COLORS.length]}
-            strokeWidth={2}
+            strokeWidth={2.5}
             dot={false}
             activeDot={{ r: 4 }}
             hide={hidden.has(brand)}

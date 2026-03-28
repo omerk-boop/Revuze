@@ -32,7 +32,7 @@ export default function DashboardPage() {
   const [locked, setLocked] = useState(false)
 
   const { brands: availableBrands, loading: brandsLoading } = useBrands(
-    dashboard?.filter.range ?? { start_date: '2025-03-01', end_date: '2026-02-28', range_type: 'lastTwelveMonths' }
+    dashboard?.filter.range ?? { start_date: '2024-03-01', end_date: '2026-02-28', range_type: 'lastTwentyFourMonths' }
   )
 
   useEffect(() => {

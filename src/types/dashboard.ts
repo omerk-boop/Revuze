@@ -1,7 +1,9 @@
 export type RangeType =
-  | 'lastTwelveMonths'
-  | 'lastSixMonths'
   | 'lastThreeMonths'
+  | 'lastSixMonths'
+  | 'lastTwelveMonths'
+  | 'lastTwentyFourMonths'
+  | 'lastThirtySixMonths'
   | 'custom'
   | 'periodOverPeriod'
 
@@ -131,9 +133,9 @@ export const DEFAULT_FILTER: DashboardFilter = {
   countries: [],
   topics: [],
   range: {
-    start_date: '2025-03-01',
+    start_date: '2024-03-01',
     end_date: '2026-02-28',
-    range_type: 'lastTwelveMonths',
+    range_type: 'lastTwentyFourMonths',
   },
   star_ratings: [],
   pdp_star_rating: [],
