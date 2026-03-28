@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft, Lock, Unlock, MessageSquare } from 'lucide-react'
+import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft, Lock, Unlock, MessageSquare, Sheet } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Dashboard, Widget } from '../types/dashboard'
 import { getDashboard, getDashboards, saveDashboard } from '../services/storage'
@@ -14,6 +14,7 @@ import ImportDashboardModal from '../components/builder/ImportDashboardModal'
 import AddRowPanel from '../components/builder/AddRowPanel'
 import WidgetLibrary from '../components/builder/WidgetLibrary'
 import ChatPanel from '../components/chat/ChatPanel'
+import { exportDashboardToSheets } from '../services/exportToSheets'
 import { useBrands } from '../hooks/useBrands'
 
 export default function DashboardPage() {
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const [showLibrary, setShowLibrary] = useState(true)
   const [showChat, setShowChat] = useState(false)
   const [locked, setLocked] = useState(false)
+  const [exportProgress, setExportProgress] = useState<string | null>(null)
 
   const { brands: availableBrands, loading: brandsLoading } = useBrands(
     dashboard?.filter.range ?? { start_date: '2024-03-01', end_date: '2026-02-28', range_type: 'lastTwentyFourMonths' }
@@ -137,6 +139,15 @@ export default function DashboardPage() {
       return { ...prev, widgets: [...prev.widgets, ...widgets], updated_at: new Date().toISOString() }
     })
     setDirty(true); setSaved(false)
+  }
+
+  const handleExport = async () => {
+    if (!dashboard || exportProgress !== null) return
+    try {
+      await exportDashboardToSheets(dashboard, setExportProgress)
+    } finally {
+      setExportProgress(null)
+    }
   }
 
   const handleSave = () => {
@@ -268,6 +279,16 @@ export default function DashboardPage() {
           </button>
 
           <button
+            onClick={handleExport}
+            disabled={exportProgress !== null || dashboard.widgets.length === 0}
+            title="Export to Google Sheets (.xlsx)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 text-xs font-semibold hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <Sheet className="w-3.5 h-3.5" />
+            {exportProgress !== null ? 'Exporting…' : 'Export'}
+          </button>
+
+          <button
             onClick={() => setShowImport(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-colors"
           >
@@ -349,6 +370,15 @@ export default function DashboardPage() {
           <ChatPanel dashboard={dashboard} onClose={() => setShowChat(false)} />
         )}
       </div>
+
+      {/* Export progress toast */}
+      {exportProgress !== null && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-slate-900 text-white rounded-xl shadow-xl text-sm font-medium">
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+          <span>{exportProgress}</span>
+          <span className="text-slate-400 text-xs ml-1">— do not navigate away</span>
+        </div>
+      )}
 
       {showImport && (
         <ImportDashboardModal
