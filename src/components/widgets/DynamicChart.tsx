@@ -110,8 +110,8 @@ export default function DynamicChart({ data, transformCode }: DynamicChartProps)
           const yAxisId = s.yAxisId || 'left'
           const commonProps = { key: s.dataKey, dataKey: s.dataKey, name: s.name, yAxisId }
           if (s.kind === 'bar') return <Bar {...commonProps} fill={color} stackId={s.stackId} radius={s.stackId ? undefined : [3, 3, 0, 0]} />
-          if (s.kind === 'area') return <Area {...commonProps} stroke={color} fill={color} fillOpacity={0.15} strokeWidth={2.5} dot={false} />
-          return <Line {...commonProps} stroke={color} strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+          if (s.kind === 'area') return <Area type="natural" {...commonProps} stroke={color} fill={color} fillOpacity={0.15} strokeWidth={2.5} dot={false} />
+          return <Line type="natural" {...commonProps} stroke={color} strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
         })}
       </ComposedChart>
     </ResponsiveContainer>
