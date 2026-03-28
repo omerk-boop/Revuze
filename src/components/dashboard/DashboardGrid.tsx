@@ -78,7 +78,7 @@ function WidgetRenderer({ widget, dashboard, token, onDelete }: { widget: Widget
   }
 
   return (
-    <WidgetErrorBoundary title={widget.title}>
+    <WidgetErrorBoundary title={widget.title} onDelete={onDelete}>
       <WidgetWrapper
         title={widget.title}
         type={widget.type}
