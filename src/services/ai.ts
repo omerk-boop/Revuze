@@ -154,23 +154,33 @@ return { chartData, xKey: 'topic', series: [{ kind: 'bar', dataKey: 'volume', na
     description: `Add a fully custom table for any tabular view the user requests.
 Use this for: any list, ranking, comparison table, summary table — whenever the user asks for a table view that the built-in tools don't cover.
 
-ENDPOINT OPTIONS (same as add_custom_chart):
+ENDPOINT OPTIONS:
 - "key_metrics_overtime" → { data: [{date, volume, sentiment, reviews_star_rating}] }
 - "topics_trends"        → { growing: { data: [{name, volume, sentiment, volume_trend, sentiment_trend}] }, decreasing: { data: [...] } }
 - "statistics_totals"    → { sentiment, volume, reviews_star_rating, pdp_star_rating, products, brands }
 - "products"             → { products: [{name, brand, sentiment_data:{sentiment}, reviews_data:{reviews}, reviews_star_rating:{avg}}] }
+- "products_monthly"     → { months: ["2025-03","2025-04",...], byMonth: { "2025-03": [{name,brand,reviews_data:{reviews},...}], ... } }
+  USE THIS for any table where columns = months (pivot tables, monthly breakdowns, time-series tables)
 
 TRANSFORM CODE RULES:
-- Receives one argument: \`data\` (raw API response)
+- Receives one argument: \`data\` (raw API response as above)
 - Must return: { columns: [{key, label, align?}], rows: [plain objects] }
 - align: "left" (default) | "right" | "center"
 - Do NOT use JSX, import statements, or require(). Plain ES6 only.
 
-EXAMPLE — products table:
+EXAMPLE — simple products table (use endpoint "products"):
 const rows = data.products.slice(0, 20).map(p => ({ name: p.name, brand: p.brand, reviews: p.reviews_data.reviews.toLocaleString(), rating: p.reviews_star_rating.avg.toFixed(2), sentiment: Math.round(p.sentiment_data.sentiment) + '%' }))
 return { columns: [{ key: 'name', label: 'Product' }, { key: 'brand', label: 'Brand' }, { key: 'reviews', label: 'Reviews', align: 'right' }, { key: 'rating', label: 'Rating', align: 'right' }, { key: 'sentiment', label: 'Sentiment', align: 'right' }], rows }
 
-EXAMPLE — top topics table:
+EXAMPLE — monthly pivot: reviews per product per month (use endpoint "products_monthly"):
+const { months, byMonth } = data
+const productMap = {}
+months.forEach(function(m) { (byMonth[m] || []).forEach(function(p) { if (!productMap[p.name]) productMap[p.name] = { Product: p.name, Brand: p.brand }; productMap[p.name][m] = (p.reviews_data && p.reviews_data.reviews) ? p.reviews_data.reviews : 0 }) })
+const rows = Object.values(productMap).sort(function(a,b) { const ta = months.reduce(function(s,m){return s+(a[m]||0)},0); const tb = months.reduce(function(s,m){return s+(b[m]||0)},0); return tb-ta }).slice(0, 25)
+const monthCols = months.map(function(m) { const parts = m.split('-'); const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1); return { key: m, label: d.toLocaleString('default',{month:'short',year:'2-digit'}), align: 'right' } })
+return { columns: [{ key: 'Product', label: 'Product' }, { key: 'Brand', label: 'Brand' }].concat(monthCols), rows }
+
+EXAMPLE — top topics table (use endpoint "topics_trends"):
 const topics = [...data.growing.data, ...data.decreasing.data].sort((a,b) => b.volume - a.volume).slice(0, 15)
 const rows = topics.map(t => ({ topic: t.name, volume: t.volume.toLocaleString(), volTrend: (t.volume_trend > 0 ? '+' : '') + t.volume_trend.toFixed(1) + '%', sentiment: Math.round(t.sentiment) + '%' }))
 return { columns: [{ key: 'topic', label: 'Topic' }, { key: 'volume', label: 'Volume', align: 'right' }, { key: 'volTrend', label: 'Vol Trend', align: 'right' }, { key: 'sentiment', label: 'Sentiment', align: 'right' }], rows }`,
@@ -178,7 +188,7 @@ return { columns: [{ key: 'topic', label: 'Topic' }, { key: 'volume', label: 'Vo
       type: 'object',
       properties: {
         title:          { type: 'string' },
-        endpoint:       { type: 'string', enum: ['key_metrics_overtime', 'topics_trends', 'statistics_totals', 'products'] },
+        endpoint:       { type: 'string', enum: ['key_metrics_overtime', 'topics_trends', 'statistics_totals', 'products', 'products_monthly'] },
         transform_code: { type: 'string', description: 'JS function body. Receives (data). Must return {columns:[{key,label,align?}], rows:[...]}.' },
         x: { type: 'number' }, y: { type: 'number' },
       },

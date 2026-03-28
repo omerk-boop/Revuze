@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { parseISO, startOfMonth, endOfMonth, addMonths, format, isAfter } from 'date-fns'
 import type { DashboardFilter, DateRange, Widget } from '../types/dashboard'
 import {
   fetchStatisticsTotals,
@@ -91,12 +92,37 @@ export const useWidgetData = (
       case 'custom_chart':
       case 'custom_table': {
         const cfg = widget.config as CustomChartConfig | CustomTableConfig
-        switch (cfg.endpoint) {
-          case 'key_metrics_overtime': fetchFn = fetchKeyMetricsOvertime(body); break
-          case 'topics_trends':        fetchFn = fetchTopicsTrends(body); break
-          case 'statistics_totals':    fetchFn = fetchStatisticsTotals(body); break
-          case 'products':             fetchFn = fetchProducts({ ...body, size: 50 }); break
-          default:                     fetchFn = fetchKeyMetricsOvertime(body)
+        if (cfg.endpoint === 'products_monthly') {
+          // One products call per calendar month in the filter range
+          const rangeStart = parseISO(effectiveFilter.range.start_date)
+          const rangeEnd   = parseISO(effectiveFilter.range.end_date)
+          const months: string[] = []
+          let cur = startOfMonth(rangeStart)
+          while (!isAfter(cur, startOfMonth(rangeEnd))) {
+            months.push(format(cur, 'yyyy-MM'))
+            cur = addMonths(cur, 1)
+          }
+          fetchFn = Promise.all(
+            months.map((month) => {
+              const mStart = `${month}-01`
+              const mEnd   = format(endOfMonth(parseISO(mStart)), 'yyyy-MM-dd')
+              const mFilter = { ...effectiveFilter, range: { start_date: mStart, end_date: mEnd, range_type: 'custom' as const } }
+              return fetchProducts({ ...body, filter: mFilter, size: 100 })
+                .then((r) => ({ month, products: r.products }))
+            })
+          ).then((results) => {
+            const byMonth: Record<string, typeof results[0]['products']> = {}
+            results.forEach(({ month, products }) => { byMonth[month] = products })
+            return { months, byMonth }
+          })
+        } else {
+          switch (cfg.endpoint) {
+            case 'key_metrics_overtime': fetchFn = fetchKeyMetricsOvertime(body); break
+            case 'topics_trends':        fetchFn = fetchTopicsTrends(body); break
+            case 'statistics_totals':    fetchFn = fetchStatisticsTotals(body); break
+            case 'products':             fetchFn = fetchProducts({ ...body, size: 50 }); break
+            default:                     fetchFn = fetchKeyMetricsOvertime(body)
+          }
         }
         break
       }

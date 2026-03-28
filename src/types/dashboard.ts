@@ -78,7 +78,7 @@ export interface StarRatingBarConfig {
 }
 
 // custom_chart: AI-generated transform + declarative series spec
-export type CustomChartEndpoint = 'key_metrics_overtime' | 'topics_trends' | 'statistics_totals' | 'products'
+export type CustomChartEndpoint = 'key_metrics_overtime' | 'topics_trends' | 'statistics_totals' | 'products' | 'products_monthly'
 
 export interface CustomChartConfig {
   endpoint: CustomChartEndpoint
