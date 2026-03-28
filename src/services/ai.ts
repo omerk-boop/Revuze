@@ -155,7 +155,7 @@ return { chartData, xKey: 'topic', series: [{ kind: 'bar', dataKey: 'volume', na
       type: 'object',
       properties: {
         title:          { type: 'string', description: 'Widget title' },
-        endpoint:       { type: 'string', enum: ['key_metrics_overtime', 'topics_trends', 'statistics_totals', 'products'], description: 'Which API to call for data' },
+        endpoint:       { type: 'string', enum: ['key_metrics_overtime', 'topics_trends', 'statistics_totals', 'products', 'star_ratings_summary', 'products_monthly'], description: 'Which API to call for data' },
         transform_code: { type: 'string', description: 'JS function body (no JSX, no imports). Receives (data, dateFns). Must return {chartData, xKey, series}.' },
         x: { type: 'number' }, y: { type: 'number' },
       },
@@ -213,7 +213,7 @@ return { columns: [{ key: 'topic', label: 'Topic' }, { key: 'volume', label: 'Vo
   },
   {
     name: 'add_star_rating_bar',
-    description: 'Add a stacked bar chart showing review VOLUME broken down by star rating (1★–5★) over time. Each bar is a week; each segment is a star rating coloured red→green. Use for: "star rating distribution", "rating breakdown", "how many 1-star vs 5-star reviews", "review quality distribution".',
+    description: 'Add a stacked bar chart showing review VOLUME broken down by star rating (1★–5★) over time. Each bar segment is a star rating coloured red→green. The widget has built-in W/M/Q granularity controls so the user can switch between weekly, monthly and quarterly views. Use for: "star rating distribution over time", "rating breakdown", "how many 1-star vs 5-star reviews", "review quality distribution", "monthly star rating", "star ratings by month/week/quarter".',
     input_schema: {
       type: 'object',
       properties: {
@@ -243,7 +243,7 @@ babylist→"www.babylist.com", kohls→"www.kohls.com", buybuy baby→"buybuybab
 ## Tool Selection Guide
 - "sentiment score / rating / volume / brands / products" → add_kpi_card
 - "trend" / "over time" / "line" / "how has X changed" → add_time_series
-- "star rating distribution" / "rating breakdown" / "1-star vs 5-star" / "review quality" → add_star_rating_bar
+- "star rating distribution" / "rating breakdown" / "1-star vs 5-star" / "review quality" / "star rating by month/week" / "monthly star rating" → add_star_rating_bar (has built-in W/M/Q toggle)
 - "bar chart by brand" / "stacked bar" / "brand volume column" → add_stacked_bar
 - "brand comparison" / "compare brands" / "brand lines" → add_brand_lines
 - "topics table" / "growing topics" / "declining topics" → add_topics_table
