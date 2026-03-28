@@ -15,6 +15,7 @@ import TopicsTable from '../widgets/TopicsTable'
 import TopicsScatter from '../widgets/TopicsScatter'
 import ProductsTable from '../widgets/ProductsTable'
 import BrandReviewsChart from '../widgets/BrandReviewsChart'
+import StackedBarChart from '../widgets/StackedBarChart'
 
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -39,6 +40,8 @@ function WidgetRenderer({ widget, dashboard, token }: { widget: Widget; dashboar
         return <ProductsTable data={data as ProductsResponse} />
       case 'brand_reviews_overtime':
         return <BrandReviewsChart data={data as BrandTimeSeriesData} />
+      case 'stacked_bar':
+        return <StackedBarChart data={data as BrandTimeSeriesData} />
       default:
         return null
     }

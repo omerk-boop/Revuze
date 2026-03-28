@@ -6,6 +6,7 @@ const TYPE_ACCENT: Partial<Record<WidgetType, string>> = {
   kpi_card:               'border-t-brand-500',
   time_series:            'border-t-sky-500',
   brand_reviews_overtime: 'border-t-violet-500',
+  stacked_bar:            'border-t-teal-500',
   topics_table:           'border-t-emerald-500',
   topics_scatter:         'border-t-amber-500',
   products_table:         'border-t-indigo-500',
@@ -18,6 +19,7 @@ const TYPE_DESCRIPTIONS: Partial<Record<WidgetType, string>> = {
   topics_table:           'Ranked topics table showing volume, sentiment & trend changes. Toggle growing/declining modes.',
   topics_scatter:         'Topics plotted by sentiment (x-axis) vs review volume (y-axis). Highlights high-impact topics.',
   products_table:         'Product catalog with review count, star rating & sentiment score, including period-over-period changes.',
+  stacked_bar:            'Weekly review volume stacked by brand — shows each brand\'s share of total volume over time.',
 }
 
 interface WidgetWrapperProps {

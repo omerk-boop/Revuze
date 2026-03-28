@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   MessageSquare, BarChart3, Star, Tag, Package, Building2,
   TrendingUp, TrendingDown, LineChart, ScatterChart, Search,
-  GripVertical, Plus,
+  GripVertical, Plus, BarChart2,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { setDraggingItem } from '../../utils/dragState'
@@ -29,6 +29,7 @@ const LIBRARY: LibraryEntry[] = [
   { id: 'chart-ts',       category: 'chart', type: 'time_series',            name: 'Trends Over Time',       description: 'Sentiment, volume & rating weekly trends',  config: { metrics: ['volume', 'sentiment'] },  defaultW: 12, defaultH: 4, icon: TrendingUp,    iconBg: 'bg-sky-100',     iconColor: 'text-sky-600',     sizeLabel: '12×4' },
   { id: 'chart-brands',   category: 'chart', type: 'brand_reviews_overtime', name: 'Brand Reviews Trend',    description: 'Review volume per brand over time',         config: { brands: [] },                       defaultW: 12, defaultH: 5, icon: LineChart,     iconBg: 'bg-violet-100',  iconColor: 'text-violet-600',  sizeLabel: '12×5' },
   { id: 'chart-scatter',  category: 'chart', type: 'topics_scatter',         name: 'Topics Scatter',         description: 'Topics by sentiment vs. volume',            config: { limit: 20 },                        defaultW: 12, defaultH: 5, icon: ScatterChart,  iconBg: 'bg-amber-100',   iconColor: 'text-amber-600',   sizeLabel: '12×5' },
+  { id: 'chart-stacked',  category: 'chart', type: 'stacked_bar',            name: 'Stacked Bar by Brand',   description: 'Weekly volume stacked by brand share',      config: { brands: [] },                       defaultW: 12, defaultH: 5, icon: BarChart2,     iconBg: 'bg-teal-100',    iconColor: 'text-teal-600',    sizeLabel: '12×5' },
   // Tables
   { id: 'table-growing',  category: 'table', type: 'topics_table', name: 'Growing Topics',      description: 'Topics gaining volume & momentum',       config: { mode: 'growing',    limit: 10 },     defaultW: 12, defaultH: 5, icon: TrendingUp,    iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', sizeLabel: '12×5' },
   { id: 'table-declining',category: 'table', type: 'topics_table', name: 'Declining Topics',    description: 'Topics losing volume or sentiment',      config: { mode: 'decreasing', limit: 10 },     defaultW: 12, defaultH: 5, icon: TrendingDown,  iconBg: 'bg-red-100',     iconColor: 'text-red-500',     sizeLabel: '12×5' },

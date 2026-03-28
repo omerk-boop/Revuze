@@ -6,7 +6,7 @@ import {
   fetchTopicsTrends,
   fetchProducts,
 } from '../services/api'
-import type { ProductsTableConfig, BrandReviewsOvertimeConfig } from '../types/dashboard'
+import type { ProductsTableConfig, BrandReviewsOvertimeConfig, StackedBarConfig } from '../types/dashboard'
 import type { BrandTimeSeriesData } from '../types/api'
 
 interface WidgetDataState<T = unknown> {
@@ -60,8 +60,9 @@ export const useWidgetData = (
         fetchFn = fetchProducts({ ...body, size: cfg.size ?? 20, search: cfg.search })
         break
       }
-      case 'brand_reviews_overtime': {
-        const cfg = widget.config as BrandReviewsOvertimeConfig
+      case 'brand_reviews_overtime':
+      case 'stacked_bar': {
+        const cfg = widget.config as BrandReviewsOvertimeConfig | StackedBarConfig
         const brandsToFetch = cfg.brands?.length ? cfg.brands : effectiveFilter.brand_names
         if (!brandsToFetch.length) {
           setState({ data: { brands: [], points: [] } as BrandTimeSeriesData, loading: false, error: null })

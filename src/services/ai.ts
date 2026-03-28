@@ -60,6 +60,18 @@ When user mentions retailers, map to domains:
 4. **topics_scatter** — Scatter plot: sentiment vs volume. Size: w=12, h=5
    config: { "limit": 20 }
 
+5. **stacked_bar** — Stacked column bar chart: weekly review volume per brand stacked on a single bar per week. Best when the user asks for a "stacked bar", "stacked column", "bar chart", or "volume breakdown by brand". Size: w=12, h=5
+   config: { "brands": ["Brand A", "Brand B"] }
+   Note: brands list is required — populate it from any brand names mentioned by the user, or leave as [] to use the dashboard brand filter.
+
+## Visual Type Selection Guide
+- "line chart" / "trend" / "over time" → **time_series**
+- "bar chart" / "column chart" / "stacked bar" / "stacked column" / "bar graph" / "volume breakdown" → **stacked_bar**
+- "scatter" / "bubble" / "sentiment vs volume" → **topics_scatter**
+- "table" / "list" / "ranking" → **topics_table** or **products_table**
+- "KPI" / "metric" / "number" / "score" → **kpi_card**
+- "brand comparison over time" / "brand lines" → **brand_reviews_overtime**
+
 ## Dashboard JSON Format
 
 Return ONLY this JSON structure, no extra text or markdown:

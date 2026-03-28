@@ -32,7 +32,7 @@ export interface DashboardFilter {
   excluded_fields: string[]
 }
 
-export type WidgetType = 'kpi_card' | 'time_series' | 'topics_table' | 'topics_scatter' | 'products_table' | 'brand_reviews_overtime'
+export type WidgetType = 'kpi_card' | 'time_series' | 'topics_table' | 'topics_scatter' | 'products_table' | 'brand_reviews_overtime' | 'stacked_bar'
 
 export type KPIMetric =
   | 'sentiment'
@@ -68,7 +68,11 @@ export interface BrandReviewsOvertimeConfig {
   brands?: string[]
 }
 
-export type WidgetConfig = KPICardConfig | TimeSeriesConfig | TopicsTableConfig | TopicsScatterConfig | ProductsTableConfig | BrandReviewsOvertimeConfig
+export interface StackedBarConfig {
+  brands?: string[]
+}
+
+export type WidgetConfig = KPICardConfig | TimeSeriesConfig | TopicsTableConfig | TopicsScatterConfig | ProductsTableConfig | BrandReviewsOvertimeConfig | StackedBarConfig
 
 export interface WidgetLayout {
   x: number
