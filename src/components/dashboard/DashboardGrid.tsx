@@ -88,10 +88,10 @@ export default function DashboardGrid({
 
   const layout: Layout[] = dashboard.widgets.map((w) => ({
     i: w.id,
-    x: w.layout.x,
-    y: w.layout.y,
-    w: w.layout.w,
-    h: w.layout.h,
+    x: w.layout?.x ?? 0,
+    y: w.layout?.y ?? 0,
+    w: w.layout?.w ?? 6,
+    h: w.layout?.h ?? 3,
     static: !editable,
   }))
 

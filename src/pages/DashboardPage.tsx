@@ -45,11 +45,25 @@ export default function DashboardPage() {
 
   // ── Widget mutation helpers ────────────────────────────────────────────────
 
+  // Ensure every widget coming from AI or library always has a complete layout
+  const safeLayout = (w: Widget, fallbackY = 0): Widget => ({
+    ...w,
+    layout: {
+      x: w.layout?.x ?? 0,
+      y: w.layout?.y ?? fallbackY,
+      w: w.layout?.w ?? 6,
+      h: w.layout?.h ?? 3,
+    },
+  })
+
+  const maxYOf = (widgets: Widget[]) =>
+    widgets.reduce((m, w) => Math.max(m, (w.layout?.y ?? 0) + (w.layout?.h ?? 3)), 0)
+
   const appendWidgets = (newWidgets: Widget[]) => {
     setDashboard((prev) => {
       if (!prev) return prev
-      const maxY = prev.widgets.reduce((m, w) => Math.max(m, w.layout.y + w.layout.h), 0)
-      const shifted = newWidgets.map((w) => ({ ...w, layout: { ...w.layout, y: w.layout.y + maxY } }))
+      const maxY = maxYOf(prev.widgets)
+      const shifted = newWidgets.map((w) => safeLayout(w, maxY))
       return { ...prev, widgets: [...prev.widgets, ...shifted], updated_at: new Date().toISOString() }
     })
     setDirty(true); setSaved(false)
@@ -58,13 +72,13 @@ export default function DashboardPage() {
   const handleGenerated = (partial: Partial<Dashboard>, _prompt?: string, mode: 'replace' | 'append' = 'replace') => {
     setDashboard((prev) => {
       if (!prev) return prev
-      const newWidgets = (partial.widgets || []).map((w) => ({ ...w, id: w.id || uuidv4() }))
+      const incoming = (partial.widgets || []).map((w) => ({ ...w, id: w.id || uuidv4() }))
       let widgets: Widget[]
       if (mode === 'append' && prev.widgets.length > 0) {
-        const maxY = prev.widgets.reduce((m, w) => Math.max(m, w.layout.y + w.layout.h), 0)
-        widgets = [...prev.widgets, ...newWidgets.map((w) => ({ ...w, layout: { ...w.layout, y: w.layout.y + maxY } }))]
+        const maxY = maxYOf(prev.widgets)
+        widgets = [...prev.widgets, ...incoming.map((w) => safeLayout(w, maxY))]
       } else {
-        widgets = newWidgets
+        widgets = incoming.map((w) => safeLayout(w))
       }
       return {
         ...prev,
@@ -142,7 +156,7 @@ export default function DashboardPage() {
     )
   }
 
-  const maxY = dashboard.widgets.reduce((m, w) => Math.max(m, w.layout.y + w.layout.h), 0)
+  const maxY = maxYOf(dashboard.widgets)
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
