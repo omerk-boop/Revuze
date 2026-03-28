@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Save, ArrowLeft, Edit2, Check, X, ClipboardPaste, LayoutGrid, ChevronLeft, Lock, Unlock } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Dashboard, Widget } from '../types/dashboard'
-import { getDashboard } from '../services/storage'
+import { getDashboard, getDashboards } from '../services/storage'
 import { useDashboards } from '../hooks/useDashboards'
 import { setDraggingItem } from '../utils/dragState'
 import type { LibraryItem } from '../utils/dragState'
@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
+  const [nameError, setNameError] = useState('')
   const [saved, setSaved] = useState(!isNew)
   const [dirty, setDirty] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -148,9 +149,16 @@ export default function DashboardPage() {
   }
 
   const commitName = () => {
-    if (!nameInput.trim()) return
-    setDashboard((prev) => (prev ? { ...prev, name: nameInput.trim() } : prev))
-    setEditingName(false); setDirty(true)
+    const trimmed = nameInput.trim()
+    if (!trimmed || !dashboard) return
+    const duplicate = getDashboards().find((d) => d.id !== dashboard.id && d.name === trimmed)
+    if (duplicate) { setNameError('A dashboard with this name already exists'); return }
+    setNameError('')
+    const updated = { ...dashboard, name: trimmed }
+    setDashboard(updated)
+    updateDashboard(updated)   // persist immediately — no separate Save click needed for rename
+    setEditingName(false)
+    setDirty(true)
   }
 
   if (!dashboard) {
@@ -193,16 +201,19 @@ export default function DashboardPage() {
         {/* Dashboard name */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {editingName ? (
-            <div className="flex items-center gap-2">
-              <input
-                autoFocus
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') commitName(); if (e.key === 'Escape') setEditingName(false) }}
-                className="text-sm font-bold text-slate-900 border-b-2 border-brand-500 outline-none bg-transparent px-1 min-w-48"
-              />
-              <button onClick={commitName} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md"><Check className="w-3.5 h-3.5" /></button>
-              <button onClick={() => setEditingName(false)} className="p-1 text-slate-400 hover:bg-slate-100 rounded-md"><X className="w-3.5 h-3.5" /></button>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  value={nameInput}
+                  onChange={(e) => { setNameInput(e.target.value); setNameError('') }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') commitName(); if (e.key === 'Escape') { setEditingName(false); setNameError('') } }}
+                  className={`text-sm font-bold text-slate-900 border-b-2 outline-none bg-transparent px-1 min-w-48 ${nameError ? 'border-red-500' : 'border-brand-500'}`}
+                />
+                <button onClick={commitName} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md"><Check className="w-3.5 h-3.5" /></button>
+                <button onClick={() => { setEditingName(false); setNameError('') }} className="p-1 text-slate-400 hover:bg-slate-100 rounded-md"><X className="w-3.5 h-3.5" /></button>
+              </div>
+              {nameError && <p className="text-[10px] text-red-500 px-1">{nameError}</p>}
             </div>
           ) : (
             <div className="flex items-center gap-1.5 group min-w-0">

@@ -1,14 +1,31 @@
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Sparkles, Plus } from 'lucide-react'
+import { Sparkles, Plus, X } from 'lucide-react'
 import { useDashboards } from '../hooks/useDashboards'
 import DashboardList from '../components/dashboard/DashboardList'
 
 export default function Home() {
   const navigate = useNavigate()
-  const { dashboards, createDashboard, removeDashboard } = useDashboards()
+  const { dashboards, createDashboard, removeDashboard, refresh } = useDashboards()
+  const [showNameModal, setShowNameModal] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [nameError, setNameError] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleCreate = () => {
-    const dash = createDashboard({ name: 'New Dashboard', widgets: [] })
+  // Refresh list from localStorage whenever this page is shown
+  useEffect(() => { refresh() }, [refresh])
+
+  // Focus input when modal opens
+  useEffect(() => { if (showNameModal) setTimeout(() => inputRef.current?.focus(), 50) }, [showNameModal])
+
+  const openModal = () => { setNewName(''); setNameError(''); setShowNameModal(true) }
+
+  const confirmCreate = () => {
+    const trimmed = newName.trim()
+    if (!trimmed) { setNameError('Please enter a name'); return }
+    if (dashboards.some((d) => d.name === trimmed)) { setNameError('A dashboard with this name already exists'); return }
+    const dash = createDashboard({ name: trimmed, widgets: [] })
+    setShowNameModal(false)
     navigate(`/dashboard/${dash.id}?new=1`)
   }
 
@@ -24,7 +41,7 @@ export default function Home() {
             </p>
           </div>
           <button
-            onClick={handleCreate}
+            onClick={openModal}
             className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-semibold hover:bg-brand-700 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
@@ -46,7 +63,7 @@ export default function Home() {
               configures filters, and builds your dashboard instantly — no setup required.
             </p>
             <button
-              onClick={handleCreate}
+              onClick={openModal}
               className="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg font-semibold text-sm transition-colors shadow-sm"
             >
               Create my first dashboard →
@@ -54,8 +71,45 @@ export default function Home() {
           </div>
         )}
 
-        <DashboardList dashboards={dashboards} onDelete={removeDashboard} onCreate={handleCreate} />
+        <DashboardList dashboards={dashboards} onDelete={removeDashboard} onCreate={openModal} />
       </div>
+
+      {/* Name modal */}
+      {showNameModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md mx-4 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-slate-900">Name your dashboard</h2>
+              <button onClick={() => setShowNameModal(false)} className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <input
+              ref={inputRef}
+              value={newName}
+              onChange={(e) => { setNewName(e.target.value); setNameError('') }}
+              onKeyDown={(e) => { if (e.key === 'Enter') confirmCreate(); if (e.key === 'Escape') setShowNameModal(false) }}
+              placeholder="e.g. Brand Performance Q1"
+              className={`w-full px-3 py-2 rounded-lg border text-sm text-slate-900 outline-none transition-colors ${nameError ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-brand-500'}`}
+            />
+            {nameError && <p className="mt-1.5 text-xs text-red-500">{nameError}</p>}
+            <div className="flex gap-2 mt-5 justify-end">
+              <button
+                onClick={() => setShowNameModal(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCreate}
+                className="px-5 py-2 rounded-lg bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition-colors shadow-sm"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
