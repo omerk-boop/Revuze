@@ -77,6 +77,11 @@ const METRIC_CONFIG: Record<KPIMetric, MetricConfig> = {
 
 export default function KPICard({ data, metric }: KPICardProps) {
   const cfg = METRIC_CONFIG[metric]
+  if (!cfg) return (
+    <div className="flex items-center justify-center h-full text-xs text-slate-400">
+      Unknown metric: {metric}
+    </div>
+  )
   const value = data[metric] as number
   const trend = cfg.trendKey ? (data[cfg.trendKey] as number) : null
   const Icon = cfg.icon

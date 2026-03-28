@@ -167,7 +167,13 @@ export const generateDashboard = async (
   const jsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/)
   if (jsonMatch) jsonText = jsonMatch[1].trim()
 
-  const parsed = JSON.parse(jsonText)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let parsed: any
+  try {
+    parsed = JSON.parse(jsonText)
+  } catch {
+    throw new Error(`AI returned invalid JSON. Raw response:\n${jsonText.slice(0, 300)}`)
+  }
 
   const widgets = (parsed.widgets || []).map((w: Dashboard['widgets'][0]) => ({
     ...w,

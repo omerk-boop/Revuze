@@ -8,6 +8,7 @@ import { useWidgetData } from '../../hooks/useWidgetData'
 import { getDraggingItem } from '../../utils/dragState'
 import type { LibraryItem } from '../../utils/dragState'
 import WidgetWrapper from '../widgets/WidgetWrapper'
+import WidgetErrorBoundary from '../widgets/WidgetErrorBoundary'
 import KPICard from '../widgets/KPICard'
 import TimeSeriesChart from '../widgets/TimeSeriesChart'
 import TopicsTable from '../widgets/TopicsTable'
@@ -44,9 +45,11 @@ function WidgetRenderer({ widget, dashboard, token }: { widget: Widget; dashboar
   }
 
   return (
-    <WidgetWrapper title={widget.title} type={widget.type} loading={loading} error={error}>
-      {renderContent()}
-    </WidgetWrapper>
+    <WidgetErrorBoundary title={widget.title}>
+      <WidgetWrapper title={widget.title} type={widget.type} loading={loading} error={error}>
+        {renderContent()}
+      </WidgetWrapper>
+    </WidgetErrorBoundary>
   )
 }
 
