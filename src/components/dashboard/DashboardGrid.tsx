@@ -2,7 +2,7 @@ import { useCallback, useRef, useState, useEffect } from 'react'
 import GridLayout from 'react-grid-layout'
 import type { Layout } from 'react-grid-layout'
 import { useToken } from '../../context/TokenContext'
-import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, TopicsTableConfig, TopicsScatterConfig } from '../../types/dashboard'
+import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, TopicsTableConfig, TopicsScatterConfig, CustomChartConfig } from '../../types/dashboard'
 import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse, ProductsResponse, BrandTimeSeriesData, StarRatingTimeSeriesData } from '../../types/api'
 import { useWidgetData } from '../../hooks/useWidgetData'
 import { getDraggingItem } from '../../utils/dragState'
@@ -17,6 +17,7 @@ import ProductsTable from '../widgets/ProductsTable'
 import BrandReviewsChart from '../widgets/BrandReviewsChart'
 import StackedBarChart from '../widgets/StackedBarChart'
 import StarRatingBarChart from '../widgets/StarRatingBarChart'
+import DynamicChart from '../widgets/DynamicChart'
 
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -45,6 +46,10 @@ function WidgetRenderer({ widget, dashboard, token, onDelete }: { widget: Widget
         return <StackedBarChart data={data as BrandTimeSeriesData} />
       case 'star_rating_bar':
         return <StarRatingBarChart data={data as StarRatingTimeSeriesData} />
+      case 'custom_chart': {
+        const cfg = widget.config as CustomChartConfig
+        return <DynamicChart data={data} transformCode={cfg.transformCode} />
+      }
       default:
         return null
     }

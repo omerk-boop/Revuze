@@ -32,7 +32,7 @@ export interface DashboardFilter {
   excluded_fields: string[]
 }
 
-export type WidgetType = 'kpi_card' | 'time_series' | 'topics_table' | 'topics_scatter' | 'products_table' | 'brand_reviews_overtime' | 'stacked_bar' | 'star_rating_bar'
+export type WidgetType = 'kpi_card' | 'time_series' | 'topics_table' | 'topics_scatter' | 'products_table' | 'brand_reviews_overtime' | 'stacked_bar' | 'star_rating_bar' | 'custom_chart'
 
 export type KPIMetric =
   | 'sentiment'
@@ -77,7 +77,17 @@ export interface StarRatingBarConfig {
   placeholder?: never
 }
 
-export type WidgetConfig = KPICardConfig | TimeSeriesConfig | TopicsTableConfig | TopicsScatterConfig | ProductsTableConfig | BrandReviewsOvertimeConfig | StackedBarConfig | StarRatingBarConfig
+// custom_chart: AI-generated transform + declarative series spec
+export type CustomChartEndpoint = 'key_metrics_overtime' | 'topics_trends' | 'statistics_totals' | 'products'
+
+export interface CustomChartConfig {
+  endpoint: CustomChartEndpoint
+  // JS function body: receives `data` (raw API response) + `dateFns` ({format, parseISO})
+  // Must return a DynamicChartSpec object
+  transformCode: string
+}
+
+export type WidgetConfig = KPICardConfig | TimeSeriesConfig | TopicsTableConfig | TopicsScatterConfig | ProductsTableConfig | BrandReviewsOvertimeConfig | StackedBarConfig | StarRatingBarConfig | CustomChartConfig
 
 export interface WidgetLayout {
   x: number

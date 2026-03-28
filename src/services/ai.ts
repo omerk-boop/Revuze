@@ -108,6 +108,48 @@ const TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'add_custom_chart',
+    description: `Add a fully custom chart for any visualization not covered by the other tools.
+Use this for: area charts, mixed bar+line, dual-axis charts, custom groupings, pie-style data, any novel visual the user requests.
+You write a small JS transform that converts raw API data into a chart spec. The renderer handles the rest.
+
+ENDPOINT OPTIONS:
+- "key_metrics_overtime" → { data: [{date, volume, sentiment, reviews_star_rating}] }
+- "topics_trends"        → { growing: { data: [{name, volume, sentiment, volume_trend, sentiment_trend}] }, decreasing: { data: [...] } }
+- "statistics_totals"    → { sentiment, volume, reviews_star_rating, pdp_star_rating, products, brands, ...trends }
+- "products"             → { products: [{name, brand, sentiment_data:{sentiment}, reviews_data:{reviews}, reviews_star_rating:{avg}}] }
+
+TRANSFORM CODE RULES:
+- Receives two arguments: \`data\` (raw API response as above) and \`dateFns\` ({format, parseISO})
+- Must return an object: { chartData, xKey, series, rightAxisKeys? }
+- chartData: array of plain objects, one per x-axis point
+- xKey: string — the property name used for the x-axis
+- series: array of { kind, dataKey, name, color, stackId?, yAxisId? }
+  - kind: "bar" | "line" | "area"
+  - stackId: set same string on multiple bars to stack them
+  - yAxisId: "left" (default) or "right" for dual-axis
+- Do NOT use JSX, import statements, or require(). Plain ES6 only.
+
+EXAMPLE — area chart of sentiment over time:
+const pts = data.data.map(d => ({ week: dateFns.format(dateFns.parseISO(d.date), 'MMM d'), sentiment: Math.round(d.sentiment), volume: d.volume }))
+return { chartData: pts, xKey: 'week', series: [{ kind: 'area', dataKey: 'sentiment', name: 'Sentiment', color: '#6366f1' }, { kind: 'bar', dataKey: 'volume', name: 'Volume', color: '#0ea5e9', yAxisId: 'right' }] }
+
+EXAMPLE — topics bar chart (top 10 by volume):
+const topics = [...data.growing.data, ...data.decreasing.data].sort((a,b) => b.volume - a.volume).slice(0, 10)
+const chartData = topics.map(t => ({ topic: t.name.length > 16 ? t.name.slice(0,14)+'…' : t.name, volume: t.volume, sentiment: Math.round(t.sentiment) }))
+return { chartData, xKey: 'topic', series: [{ kind: 'bar', dataKey: 'volume', name: 'Volume', color: '#6366f1' }, { kind: 'line', dataKey: 'sentiment', name: 'Sentiment %', color: '#f59e0b', yAxisId: 'right' }] }`,
+    input_schema: {
+      type: 'object',
+      properties: {
+        title:          { type: 'string', description: 'Widget title' },
+        endpoint:       { type: 'string', enum: ['key_metrics_overtime', 'topics_trends', 'statistics_totals', 'products'], description: 'Which API to call for data' },
+        transform_code: { type: 'string', description: 'JS function body (no JSX, no imports). Receives (data, dateFns). Must return {chartData, xKey, series}.' },
+        x: { type: 'number' }, y: { type: 'number' },
+      },
+      required: ['title', 'endpoint', 'transform_code', 'x', 'y'],
+    },
+  },
+  {
     name: 'add_star_rating_bar',
     description: 'Add a stacked bar chart showing review VOLUME broken down by star rating (1★–5★) over time. Each bar is a week; each segment is a star rating coloured red→green. Use for: "star rating distribution", "rating breakdown", "how many 1-star vs 5-star reviews", "review quality distribution".',
     input_schema: {
@@ -143,6 +185,7 @@ babylist→"www.babylist.com", kohls→"www.kohls.com", buybuy baby→"buybuybab
 - "bar chart by brand" / "stacked bar" / "brand volume column" → add_stacked_bar
 - "brand comparison" / "compare brands" / "brand lines" → add_brand_lines
 - "topics table" / "growing topics" / "declining topics" → add_topics_table
+- ANY other chart (area, mixed, dual-axis, custom grouping, novel visual) → add_custom_chart
 - "scatter" / "topic map" / "sentiment vs volume" → add_topics_scatter
 - "products" / "product list" / "catalog" → add_products_table
 
@@ -180,6 +223,8 @@ function toolCallToWidget(name: string, input: Record<string, any>): Widget | nu
       return { id: uuidv4(), type: 'products_table', title: input.title, config: { size: input.size ?? 20 }, layout }
     case 'add_star_rating_bar':
       return { id: uuidv4(), type: 'star_rating_bar', title: input.title, config: {}, layout }
+    case 'add_custom_chart':
+      return { id: uuidv4(), type: 'custom_chart', title: input.title, config: { endpoint: input.endpoint, transformCode: input.transform_code }, layout }
     default:
       return null
   }
