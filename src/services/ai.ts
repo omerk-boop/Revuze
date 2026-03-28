@@ -192,13 +192,26 @@ export const generateDashboard = async (
     id: w.id || uuidv4(),
   }))
 
+  const parsedFilter = parsed.filter ?? {}
   return {
     mode: isAdding ? 'append' : 'replace',
     dashboard: {
       ...parsed,
       widgets,
-      filter: { ...DEFAULT_FILTER, ...(parsed.filter ?? {}) },
-      compare_range: parsed.compare_range || DEFAULT_COMPARE_RANGE,
+      filter: {
+        ...DEFAULT_FILTER,
+        ...parsedFilter,
+        // Deep-merge range so a partial range from AI doesn't wipe out required fields
+        range: { ...DEFAULT_FILTER.range, ...(parsedFilter.range ?? {}) },
+        // Ensure all array fields are actually arrays
+        domains:       Array.isArray(parsedFilter.domains)       ? parsedFilter.domains       : DEFAULT_FILTER.domains,
+        brand_names:   Array.isArray(parsedFilter.brand_names)   ? parsedFilter.brand_names   : DEFAULT_FILTER.brand_names,
+        star_ratings:  Array.isArray(parsedFilter.star_ratings)  ? parsedFilter.star_ratings  : DEFAULT_FILTER.star_ratings,
+        topics:        Array.isArray(parsedFilter.topics)        ? parsedFilter.topics        : DEFAULT_FILTER.topics,
+        departments:   Array.isArray(parsedFilter.departments)   ? parsedFilter.departments   : DEFAULT_FILTER.departments,
+        countries:     Array.isArray(parsedFilter.countries)     ? parsedFilter.countries     : DEFAULT_FILTER.countries,
+      },
+      compare_range: { ...DEFAULT_COMPARE_RANGE, ...(parsed.compare_range ?? {}) },
     },
   }
 }

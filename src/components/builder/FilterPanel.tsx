@@ -144,32 +144,32 @@ function BrandFilter({
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
 export default function FilterPanel({ filter, onChange, availableBrands = [], brandsLoading = false }: FilterPanelProps) {
-  const activeCount = filter.domains.length + filter.brand_names.length + filter.star_ratings.length
+  // Defensive: AI may return incomplete filter — ensure arrays and range always exist
+  const domains = filter.domains ?? []
+  const brand_names = filter.brand_names ?? []
+  const star_ratings = filter.star_ratings ?? []
+  const range = filter.range ?? { range_type: 'lastTwelveMonths', start_date: '2025-03-01', end_date: '2026-02-28' }
+
+  const activeCount = domains.length + brand_names.length + star_ratings.length
 
   const setRange = (value: string) => {
     const dates = RANGE_DATES[value] ?? RANGE_DATES.lastTwelveMonths
-    onChange({ ...filter, range: { ...filter.range, range_type: value as DashboardFilter['range']['range_type'], ...dates } })
+    onChange({ ...filter, range: { ...range, range_type: value as DashboardFilter['range']['range_type'], ...dates } })
   }
 
   const toggleDomain = (domain: string) => {
-    const domains = filter.domains.includes(domain)
-      ? filter.domains.filter((d) => d !== domain)
-      : [...filter.domains, domain]
-    onChange({ ...filter, domains })
+    const next = domains.includes(domain) ? domains.filter((d) => d !== domain) : [...domains, domain]
+    onChange({ ...filter, domains: next })
   }
 
   const toggleBrand = (brand: string) => {
-    const brand_names = filter.brand_names.includes(brand)
-      ? filter.brand_names.filter((b) => b !== brand)
-      : [...filter.brand_names, brand]
-    onChange({ ...filter, brand_names })
+    const next = brand_names.includes(brand) ? brand_names.filter((b) => b !== brand) : [...brand_names, brand]
+    onChange({ ...filter, brand_names: next })
   }
 
   const toggleStar = (star: number) => {
-    const star_ratings = filter.star_ratings.includes(star)
-      ? filter.star_ratings.filter((s) => s !== star)
-      : [...filter.star_ratings, star]
-    onChange({ ...filter, star_ratings })
+    const next = star_ratings.includes(star) ? star_ratings.filter((s) => s !== star) : [...star_ratings, star]
+    onChange({ ...filter, star_ratings: next })
   }
 
   const clearAll = () => onChange({ ...filter, domains: [], brand_names: [], star_ratings: [] })
@@ -204,7 +204,7 @@ export default function FilterPanel({ filter, onChange, availableBrands = [], br
                 key={opt.value}
                 onClick={() => setRange(opt.value)}
                 className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
-                  filter.range.range_type === opt.value
+                  range.range_type === opt.value
                     ? 'bg-brand-600 text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
                 }`}
@@ -218,11 +218,11 @@ export default function FilterPanel({ filter, onChange, availableBrands = [], br
         {/* Retailers */}
         <div className="px-4 py-3 flex flex-col gap-2 min-w-0">
           <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-            Retailer{filter.domains.length > 0 && <span className="text-brand-600 normal-case font-bold ml-1">({filter.domains.length})</span>}
+            Retailer{domains.length > 0 &&<span className="text-brand-600 normal-case font-bold ml-1">({filter.domains.length})</span>}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {DOMAINS.map(({ value, label }) => {
-              const active = filter.domains.includes(value)
+              const active = domains.includes(value)
               return (
                 <button
                   key={value}
@@ -243,7 +243,7 @@ export default function FilterPanel({ filter, onChange, availableBrands = [], br
         {/* Brands */}
         <div className="px-4 py-3 relative">
           <BrandFilter
-            selected={filter.brand_names}
+            selected={brand_names}
             available={availableBrands}
             loading={brandsLoading}
             onToggle={toggleBrand}
@@ -255,7 +255,7 @@ export default function FilterPanel({ filter, onChange, availableBrands = [], br
           <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Stars</p>
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((star) => {
-              const active = filter.star_ratings.includes(star)
+              const active = star_ratings.includes(star)
               return (
                 <button
                   key={star}
