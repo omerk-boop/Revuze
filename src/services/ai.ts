@@ -147,10 +147,10 @@ babylist→"www.babylist.com", kohls→"www.kohls.com", buybuy baby→"buybuybab
 - "products" / "product list" / "catalog" → add_products_table
 
 ## Workflow
-1. Call set_dashboard_info first (name, date range, any filters mentioned)
-2. Add 2–4 KPI cards in the first row (y=0)
-3. Add charts/tables below (y=2+)
-4. Always include at least 2 KPI cards`
+1. Add only what the user explicitly asks for — do not add extra widgets
+2. If the user asks for a chart, add that chart only
+3. If the user asks for a full dashboard overview, then add KPI cards + charts
+4. KPI cards go in the first row (y=0, x=0/3/6/9); charts/tables below (y=2+)`
 
 // ─── Tool-call → Widget mapping ───────────────────────────────────────────────
 

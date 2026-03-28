@@ -117,6 +117,11 @@ export default function DashboardPage() {
     setDirty(true); setSaved(false)
   }
 
+  const handleWidgetDelete = (id: string) => {
+    setDashboard((prev) => prev ? { ...prev, widgets: prev.widgets.filter((w) => w.id !== id) } : prev)
+    setDirty(true); setSaved(false)
+  }
+
   const handleAddRow = (widgets: Widget[]) => {
     setDashboard((prev) => {
       if (!prev) return prev
@@ -297,6 +302,7 @@ export default function DashboardPage() {
               dashboard={dashboard}
               onLayoutChange={handleLayoutChange}
               onWidgetDrop={locked ? undefined : handleWidgetDrop}
+              onWidgetDelete={locked ? undefined : handleWidgetDelete}
               editable={!locked}
             />
 

@@ -23,7 +23,7 @@ import 'react-resizable/css/styles.css'
 
 // ─── Widget renderer ──────────────────────────────────────────────────────────
 
-function WidgetRenderer({ widget, dashboard, token }: { widget: Widget; dashboard: Dashboard; token: string | null }) {
+function WidgetRenderer({ widget, dashboard, token, onDelete }: { widget: Widget; dashboard: Dashboard; token: string | null; onDelete?: () => void }) {
   const { data, loading, error } = useWidgetData(widget, dashboard.filter, dashboard.compare_range, token)
 
   const renderContent = () => {
@@ -52,7 +52,7 @@ function WidgetRenderer({ widget, dashboard, token }: { widget: Widget; dashboar
 
   return (
     <WidgetErrorBoundary title={widget.title}>
-      <WidgetWrapper title={widget.title} type={widget.type} loading={loading} error={error}>
+      <WidgetWrapper title={widget.title} type={widget.type} loading={loading} error={error} onDelete={onDelete}>
         {renderContent()}
       </WidgetWrapper>
     </WidgetErrorBoundary>
@@ -65,6 +65,7 @@ interface DashboardGridProps {
   dashboard: Dashboard
   onLayoutChange?: (widgets: Widget[]) => void
   onWidgetDrop?: (item: LibraryItem, x: number, y: number) => void
+  onWidgetDelete?: (id: string) => void
   editable?: boolean
 }
 
@@ -72,6 +73,7 @@ export default function DashboardGrid({
   dashboard,
   onLayoutChange,
   onWidgetDrop,
+  onWidgetDelete,
   editable = false,
 }: DashboardGridProps) {
   const token = useToken()
@@ -155,7 +157,12 @@ export default function DashboardGrid({
         >
           {dashboard.widgets.map((widget) => (
             <div key={widget.id}>
-              <WidgetRenderer widget={widget} dashboard={dashboard} token={token} />
+              <WidgetRenderer
+                widget={widget}
+                dashboard={dashboard}
+                token={token}
+                onDelete={onWidgetDelete ? () => onWidgetDelete(widget.id) : undefined}
+              />
             </div>
           ))}
         </GridLayout>

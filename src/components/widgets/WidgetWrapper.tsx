@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Loader2, AlertCircle, GripVertical, Info } from 'lucide-react'
+import { Loader2, AlertCircle, GripVertical, Info, X } from 'lucide-react'
 import type { WidgetType } from '../../types/dashboard'
 
 const TYPE_ACCENT: Partial<Record<WidgetType, string>> = {
@@ -29,16 +29,17 @@ interface WidgetWrapperProps {
   type?: WidgetType
   loading?: boolean
   error?: string | null
+  onDelete?: () => void
   children: ReactNode
 }
 
-export default function WidgetWrapper({ title, type, loading, error, children }: WidgetWrapperProps) {
+export default function WidgetWrapper({ title, type, loading, error, onDelete, children }: WidgetWrapperProps) {
   const accent = type ? (TYPE_ACCENT[type] ?? 'border-t-slate-400') : 'border-t-slate-300'
   const description = type ? TYPE_DESCRIPTIONS[type] : undefined
 
   return (
     <div className={`bg-white rounded-xl border border-slate-200 shadow-widget flex flex-col h-full border-t-2 ${accent} overflow-hidden`}>
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 bg-slate-50/80 shrink-0">
+      <div className="group flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 bg-slate-50/80 shrink-0">
         <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wide truncate flex-1">{title}</h3>
 
         {/* Info tooltip */}
@@ -54,6 +55,15 @@ export default function WidgetWrapper({ title, type, loading, error, children }:
           </div>
         )}
 
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-100 text-slate-300 hover:text-red-500 shrink-0"
+            title="Remove widget"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
         <GripVertical className="w-3.5 h-3.5 text-slate-300 cursor-grab active:cursor-grabbing shrink-0" />
       </div>
 
