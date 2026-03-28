@@ -3,7 +3,7 @@
  * Each widget becomes one sheet; an Overview sheet is prepended with totals.
  * The file can be opened directly in Google Sheets (File → Import, or drag to Drive).
  */
-import * as XLSX from 'xlsx'
+import writeXlsxFile from 'write-excel-file/browser'
 import { format, parseISO, startOfMonth, endOfMonth, addMonths, isAfter } from 'date-fns'
 import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, BrandReviewsOvertimeConfig, StackedBarConfig, CustomChartConfig, CustomTableConfig, ProductsTableConfig } from '../types/dashboard'
 import type { ApiRequestBody } from './api'
@@ -231,6 +231,27 @@ function sheetName(title: string, index: number): string {
   return safe || `Widget ${index + 1}`
 }
 
+// ─── Rows → write-excel-file schema ──────────────────────────────────────────
+// write-excel-file expects [ [headerRow], [dataRow], ... ] where each cell is { value, type? }
+
+type WEFCell = { value: string | number; type?: typeof String | typeof Number }
+type WEFRow = WEFCell[]
+
+function toWefSheet(rows: Row[]): WEFRow[] {
+  if (rows.length === 0) return []
+  const keys = Object.keys(rows[0])
+  const header: WEFRow = keys.map(k => ({ value: k, type: String }))
+  const data: WEFRow[] = rows.map(row =>
+    keys.map(k => {
+      const v = row[k]
+      if (v === null || v === undefined) return { value: '', type: String }
+      if (typeof v === 'number')         return { value: v, type: Number }
+      return { value: String(v), type: String }
+    })
+  )
+  return [header, ...data]
+}
+
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 export async function exportDashboardToSheets(
@@ -243,7 +264,8 @@ export async function exportDashboardToSheets(
     group_by_product_line: false,
   }
 
-  const wb = XLSX.utils.book_new()
+  const sheets: WEFRow[][] = []
+  const names: string[] = []
 
   // Overview sheet
   onProgress?.('Fetching overview…')
@@ -257,9 +279,8 @@ export async function exportDashboardToSheets(
       { Metric: 'Products Tracked',      Value: totals.products,                                        'Trend vs Prior (%)': null },
       { Metric: 'Brands Tracked',        Value: totals.brands,                                          'Trend vs Prior (%)': null },
     ]
-    const ws = XLSX.utils.json_to_sheet(overviewRows)
-    ws['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 22 }]
-    XLSX.utils.book_append_sheet(wb, ws, 'Overview')
+    sheets.push(toWefSheet(overviewRows))
+    names.push('Overview')
   } catch { /* skip overview if fetch fails */ }
 
   // One sheet per widget
@@ -268,14 +289,12 @@ export async function exportDashboardToSheets(
     onProgress?.(`Fetching "${widget.title}" (${i + 1}/${dashboard.widgets.length})…`)
     const rows = await fetchWidgetData(widget, body)
     if (rows.length === 0) continue
-    const ws = XLSX.utils.json_to_sheet(rows)
-    // Auto-width columns
-    const keys = Object.keys(rows[0])
-    ws['!cols'] = keys.map(k => ({ wch: Math.max(k.length, 12) }))
-    XLSX.utils.book_append_sheet(wb, ws, sheetName(widget.title, i))
+    sheets.push(toWefSheet(rows))
+    names.push(sheetName(widget.title, i))
   }
 
-  // Trigger download
+  if (sheets.length === 0) return
+
   const filename = `${dashboard.name.replace(/[^\w\s-]/g, '').trim() || 'Dashboard'}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
-  XLSX.writeFile(wb, filename)
+  await writeXlsxFile(sheets, { sheets: names, fileName: filename })
 }
