@@ -30,7 +30,9 @@ export function useCatalogOptions(range: DateRange, selectedDepartments: string[
   const [departments, setDepartments] = useState<string[]>([])
   const [groups, setGroups] = useState<GroupOption[]>([])
   const [loading, setLoading] = useState(false)
-  const [hasCategoryData, setHasCategoryData] = useState(false)
+  const [hasCategoryData, setHasCategoryData] = useState(() => {
+    try { return localStorage.getItem('revuze_has_category_data') === 'true' } catch { return false }
+  })
 
   // Departments list is not affected by selection — fetch once per range change
   useEffect(() => {
@@ -39,7 +41,10 @@ export function useCatalogOptions(range: DateRange, selectedDepartments: string[
       .then((data) => {
         const deps = Array.isArray(data.departments) ? [...data.departments].sort() : []
         setDepartments(deps)
-        if (deps.length > 0) setHasCategoryData(true)
+        if (deps.length > 0) {
+          setHasCategoryData(true)
+          try { localStorage.setItem('revuze_has_category_data', 'true') } catch {}
+        }
       })
       .catch(() => {})
   }, [token, range.start_date, range.end_date])
