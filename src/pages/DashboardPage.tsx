@@ -119,13 +119,12 @@ export default function DashboardPage() {
   }
 
   const handleWidgetDelete = (id: string) => {
-    setDashboard((prev) => {
-      if (!prev) return prev
-      const updated = { ...prev, widgets: prev.widgets.filter((w) => w.id !== id) }
-      updateDashboard(updated)   // persist immediately so refresh/navigation doesn't resurrect it
-      return updated
-    })
-    setDirty(true); setSaved(false)
+    if (!dashboard) return
+    const updated = { ...dashboard, widgets: dashboard.widgets.filter((w) => w.id !== id) }
+    setDashboard(updated)
+    updateDashboard(updated)
+    setDirty(true)
+    setSaved(false)
   }
 
   const handleAddRow = (widgets: Widget[]) => {
