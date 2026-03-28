@@ -73,6 +73,10 @@ export interface BrandTimeSeriesData {
   points: { date: string; [brand: string]: number | string }[]
 }
 
+export interface StarRatingTimeSeriesData {
+  points: { date: string; '1': number; '2': number; '3': number; '4': number; '5': number }[]
+}
+
 export interface CatalogTotals {
   topics: string[]
   countries: string[]

@@ -107,6 +107,18 @@ const TOOLS: Anthropic.Tool[] = [
       required: ['title', 'x', 'y'],
     },
   },
+  {
+    name: 'add_star_rating_bar',
+    description: 'Add a stacked bar chart showing review VOLUME broken down by star rating (1★–5★) over time. Each bar is a week; each segment is a star rating coloured red→green. Use for: "star rating distribution", "rating breakdown", "how many 1-star vs 5-star reviews", "review quality distribution".',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        x: { type: 'number' }, y: { type: 'number' },
+      },
+      required: ['title', 'x', 'y'],
+    },
+  },
 ]
 
 // ─── System prompt ────────────────────────────────────────────────────────────
@@ -127,7 +139,8 @@ babylist→"www.babylist.com", kohls→"www.kohls.com", buybuy baby→"buybuybab
 ## Tool Selection Guide
 - "sentiment score / rating / volume / brands / products" → add_kpi_card
 - "trend" / "over time" / "line" / "how has X changed" → add_time_series
-- "bar chart" / "stacked bar" / "column" / "stacked column" → add_stacked_bar
+- "star rating distribution" / "rating breakdown" / "1-star vs 5-star" / "review quality" → add_star_rating_bar
+- "bar chart by brand" / "stacked bar" / "brand volume column" → add_stacked_bar
 - "brand comparison" / "compare brands" / "brand lines" → add_brand_lines
 - "topics table" / "growing topics" / "declining topics" → add_topics_table
 - "scatter" / "topic map" / "sentiment vs volume" → add_topics_scatter
@@ -165,6 +178,8 @@ function toolCallToWidget(name: string, input: Record<string, any>): Widget | nu
       return { id: uuidv4(), type: 'topics_scatter', title: input.title, config: { limit: input.limit ?? 20 }, layout }
     case 'add_products_table':
       return { id: uuidv4(), type: 'products_table', title: input.title, config: { size: input.size ?? 20 }, layout }
+    case 'add_star_rating_bar':
+      return { id: uuidv4(), type: 'star_rating_bar', title: input.title, config: {}, layout }
     default:
       return null
   }

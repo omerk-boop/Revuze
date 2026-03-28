@@ -3,7 +3,7 @@ import GridLayout from 'react-grid-layout'
 import type { Layout } from 'react-grid-layout'
 import { useToken } from '../../context/TokenContext'
 import type { Dashboard, Widget, KPICardConfig, TimeSeriesConfig, TopicsTableConfig, TopicsScatterConfig } from '../../types/dashboard'
-import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse, ProductsResponse, BrandTimeSeriesData } from '../../types/api'
+import type { StatisticsTotals, TimeSeriesResponse, TopicsTrendsResponse, ProductsResponse, BrandTimeSeriesData, StarRatingTimeSeriesData } from '../../types/api'
 import { useWidgetData } from '../../hooks/useWidgetData'
 import { getDraggingItem } from '../../utils/dragState'
 import type { LibraryItem } from '../../utils/dragState'
@@ -16,6 +16,7 @@ import TopicsScatter from '../widgets/TopicsScatter'
 import ProductsTable from '../widgets/ProductsTable'
 import BrandReviewsChart from '../widgets/BrandReviewsChart'
 import StackedBarChart from '../widgets/StackedBarChart'
+import StarRatingBarChart from '../widgets/StarRatingBarChart'
 
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -42,6 +43,8 @@ function WidgetRenderer({ widget, dashboard, token }: { widget: Widget; dashboar
         return <BrandReviewsChart data={data as BrandTimeSeriesData} />
       case 'stacked_bar':
         return <StackedBarChart data={data as BrandTimeSeriesData} />
+      case 'star_rating_bar':
+        return <StarRatingBarChart data={data as StarRatingTimeSeriesData} />
       default:
         return null
     }

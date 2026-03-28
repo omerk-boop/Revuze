@@ -32,7 +32,7 @@ export interface DashboardFilter {
   excluded_fields: string[]
 }
 
-export type WidgetType = 'kpi_card' | 'time_series' | 'topics_table' | 'topics_scatter' | 'products_table' | 'brand_reviews_overtime' | 'stacked_bar'
+export type WidgetType = 'kpi_card' | 'time_series' | 'topics_table' | 'topics_scatter' | 'products_table' | 'brand_reviews_overtime' | 'stacked_bar' | 'star_rating_bar'
 
 export type KPIMetric =
   | 'sentiment'
@@ -72,7 +72,12 @@ export interface StackedBarConfig {
   brands?: string[]
 }
 
-export type WidgetConfig = KPICardConfig | TimeSeriesConfig | TopicsTableConfig | TopicsScatterConfig | ProductsTableConfig | BrandReviewsOvertimeConfig | StackedBarConfig
+// star_rating_bar has no config — always shows all 5 star ratings
+export interface StarRatingBarConfig {
+  placeholder?: never
+}
+
+export type WidgetConfig = KPICardConfig | TimeSeriesConfig | TopicsTableConfig | TopicsScatterConfig | ProductsTableConfig | BrandReviewsOvertimeConfig | StackedBarConfig | StarRatingBarConfig
 
 export interface WidgetLayout {
   x: number

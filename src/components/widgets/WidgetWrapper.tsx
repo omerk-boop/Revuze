@@ -7,6 +7,7 @@ const TYPE_ACCENT: Partial<Record<WidgetType, string>> = {
   time_series:            'border-t-sky-500',
   brand_reviews_overtime: 'border-t-violet-500',
   stacked_bar:            'border-t-teal-500',
+  star_rating_bar:        'border-t-amber-500',
   topics_table:           'border-t-emerald-500',
   topics_scatter:         'border-t-amber-500',
   products_table:         'border-t-indigo-500',
@@ -20,6 +21,7 @@ const TYPE_DESCRIPTIONS: Partial<Record<WidgetType, string>> = {
   topics_scatter:         'Topics plotted by sentiment (x-axis) vs review volume (y-axis). Highlights high-impact topics.',
   products_table:         'Product catalog with review count, star rating & sentiment score, including period-over-period changes.',
   stacked_bar:            'Weekly review volume stacked by brand — shows each brand\'s share of total volume over time.',
+  star_rating_bar:        'Weekly review volume stacked by star rating (1★–5★, red→green) — shows the quality distribution of reviews over time.',
 }
 
 interface WidgetWrapperProps {

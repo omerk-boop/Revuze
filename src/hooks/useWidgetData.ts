@@ -7,7 +7,7 @@ import {
   fetchProducts,
 } from '../services/api'
 import type { ProductsTableConfig, BrandReviewsOvertimeConfig, StackedBarConfig } from '../types/dashboard'
-import type { BrandTimeSeriesData } from '../types/api'
+import type { BrandTimeSeriesData, StarRatingTimeSeriesData } from '../types/api'
 
 interface WidgetDataState<T = unknown> {
   data: T | null
@@ -85,6 +85,28 @@ export const useWidgetData = (
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([date, values]) => ({ date, ...values }))
           return { brands: brandsToFetch, points } as BrandTimeSeriesData
+        })
+        break
+      }
+      case 'star_rating_bar': {
+        // Make one call per star rating and combine into stacked series
+        fetchFn = Promise.all(
+          ([1, 2, 3, 4, 5] as const).map((star) =>
+            fetchKeyMetricsOvertime({ ...body, filter: { ...effectiveFilter, star_ratings: [star] } })
+              .then((r) => ({ star, series: r.data ?? [] }))
+          )
+        ).then((results) => {
+          const dateMap: Record<string, Record<string, number>> = {}
+          results.forEach(({ star, series }) => {
+            series.forEach((pt) => {
+              if (!dateMap[pt.date]) dateMap[pt.date] = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
+              dateMap[pt.date][String(star)] = pt.volume
+            })
+          })
+          const points = Object.entries(dateMap)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, vals]) => ({ date, ...vals }))
+          return { points } as StarRatingTimeSeriesData
         })
         break
       }
