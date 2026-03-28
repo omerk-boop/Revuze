@@ -52,14 +52,28 @@ const FALLBACK_COLORS = [
   '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6',
 ]
 
+// Helpers passed into every transform so code fails loudly instead of silently returning undefined/0
+const transformHelpers = {
+  // Throws if value is null/undefined — prevents transforms from silently using wrong fields
+  requireField: (value: unknown, fieldPath: string): NonNullable<typeof value> => {
+    if (value === null || value === undefined) {
+      throw new Error(`Required field "${fieldPath}" is missing from the API response. This data may not be available from the selected endpoint.`)
+    }
+    return value
+  },
+}
+
 export default function DynamicChart({ data, transformCode }: DynamicChartProps) {
   const spec = useMemo<DynamicChartSpec | null>(() => {
     try {
       // eslint-disable-next-line no-new-func
-      const fn = new Function('data', 'dateFns', transformCode)
-      const result = fn(data, { format, parseISO })
+      const fn = new Function('data', 'dateFns', 'helpers', transformCode)
+      const result = fn(data, { format, parseISO }, transformHelpers)
       if (!result || !Array.isArray(result.chartData) || !result.xKey || !Array.isArray(result.series)) {
         throw new Error('Transform must return { chartData, xKey, series }')
+      }
+      if (result.chartData.length === 0) {
+        throw new Error('No data returned — the API response may not contain the requested fields for this endpoint.')
       }
       return result as DynamicChartSpec
     } catch (e) {
@@ -67,9 +81,7 @@ export default function DynamicChart({ data, transformCode }: DynamicChartProps)
     }
   }, [data, transformCode])
 
-  if (!spec || !spec.chartData.length) {
-    return <div className="flex items-center justify-center h-full text-xs text-slate-400">No data</div>
-  }
+  if (!spec) return null
 
   // ── Pie chart ──────────────────────────────────────────────────────────────
   if (spec.series.some((s) => s.kind === 'pie')) {

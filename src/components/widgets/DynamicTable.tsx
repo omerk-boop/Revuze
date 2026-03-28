@@ -47,12 +47,21 @@ function CellContent({ value, render }: { value: unknown; render?: ColumnSpec['r
 
 export default function DynamicTable({ data, transformCode }: DynamicTableProps) {
   const spec = useMemo<DynamicTableSpec | null>(() => {
+    const requireField = (value: unknown, fieldPath: string): NonNullable<typeof value> => {
+      if (value === null || value === undefined) {
+        throw new Error(`Required field "${fieldPath}" is missing from the API response. This data may not be available from the selected endpoint.`)
+      }
+      return value
+    }
     try {
       // eslint-disable-next-line no-new-func
-      const fn = new Function('data', transformCode)
-      const result = fn(data)
+      const fn = new Function('data', 'helpers', transformCode)
+      const result = fn(data, { requireField })
       if (!result || !Array.isArray(result.columns) || !Array.isArray(result.rows)) {
         throw new Error('Transform must return { columns: [{key, label}], rows: [...] }')
+      }
+      if (result.rows.length === 0) {
+        throw new Error('No data returned — the API response may not contain the requested fields for this endpoint.')
       }
       return result as DynamicTableSpec
     } catch (e) {

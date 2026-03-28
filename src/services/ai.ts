@@ -122,7 +122,9 @@ ENDPOINT OPTIONS:
   USE THIS (not key_metrics_overtime) for ANY chart showing distribution of 1★–5★ review counts.
 
 TRANSFORM CODE RULES:
-- Receives two arguments: \`data\` (raw API response as above) and \`dateFns\` ({format, parseISO})
+⚠️ NEVER fabricate, invent, or approximate data. If the required field does not exist in the API response, throw an error instead of returning fake/zero values. Users must be able to trust every number shown.
+- Receives three arguments: \`data\` (raw API response), \`dateFns\` ({format, parseISO}), \`helpers\` ({requireField(value, fieldPath)})
+- Use helpers.requireField(value, 'path.to.field') to assert a field exists before using it — it throws with a clear message if missing
 - Must return an object: { chartData, xKey, series, rightAxisKeys? }
 - chartData: array of plain objects, one per x-axis point
 - xKey: string — the property name used for the x-axis
@@ -175,7 +177,9 @@ ENDPOINT OPTIONS:
 - "star_ratings_summary" → { '1': totalVolume, '2': totalVolume, '3': totalVolume, '4': totalVolume, '5': totalVolume }
 
 TRANSFORM CODE RULES:
-- Receives one argument: \`data\` (raw API response as above)
+⚠️ NEVER fabricate, invent, or approximate data. If the required field does not exist in the API response, throw an error instead of returning fake/zero values.
+- Receives two arguments: \`data\` (raw API response) and \`helpers\` ({requireField(value, fieldPath)})
+- Use helpers.requireField(value, 'path') to assert a field exists — throws with a clear message if missing
 - Must return: { columns: [{key, label, align?}], rows: [plain objects] }
 - align: "left" (default) | "right" | "center"
 - Do NOT use JSX, import statements, or require(). Plain ES6 only.
