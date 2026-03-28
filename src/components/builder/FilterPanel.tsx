@@ -11,6 +11,7 @@ interface FilterPanelProps {
   availableDepartments?: string[]
   availableGroups?: GroupOption[]
   catalogLoading?: boolean
+  hasCategoryData?: boolean
 }
 
 const RANGE_OPTIONS = [
@@ -192,6 +193,7 @@ export default function FilterPanel({
   availableDepartments = [],
   availableGroups = [],
   catalogLoading = false,
+  hasCategoryData = false,
 }: FilterPanelProps) {
   const domains      = filter.domains      ?? []
   const brand_names  = filter.brand_names  ?? []
@@ -221,7 +223,9 @@ export default function FilterPanel({
   const clearAll = () => onChange({ ...filter, domains: [], brand_names: [], star_ratings: [], departments: [], groups: [] })
 
   const groupOptions = (Array.isArray(availableGroups) ? availableGroups : []).map((g) => ({ value: g.group_tag, label: g.group_name }))
-  const showSegmentRow = availableDepartments.length > 0 || catalogLoading
+  // Show the row if we've ever received category data, are currently loading,
+  // or the user has active selections (so they can always clear them).
+  const showSegmentRow = hasCategoryData || catalogLoading || departments.length > 0 || groups.length > 0
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-card overflow-visible">

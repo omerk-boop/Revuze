@@ -46,6 +46,7 @@ export default function DashboardPage() {
     departments: availableDepartments,
     groups: availableGroups,
     loading: catalogLoading,
+    hasCategoryData,
   } = useCatalogOptions(filterRange, dashboard?.filter.departments ?? [])
 
   useEffect(() => {
@@ -409,6 +410,7 @@ export default function DashboardPage() {
               availableDepartments={availableDepartments}
               availableGroups={availableGroups}
               catalogLoading={catalogLoading}
+              hasCategoryData={hasCategoryData}
             />
 
             {/* Grid canvas */}
