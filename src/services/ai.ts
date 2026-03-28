@@ -222,7 +222,8 @@ export const generateDashboard = async (
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
       tools: TOOLS,
-      tool_choice: { type: 'auto' },
+      // 'any' forces Claude to call at least one tool — prevents it returning plain text
+      tool_choice: { type: 'any' },
       messages: [{ role: 'user', content: userMessage }],
     })
   } catch (err: unknown) {
@@ -231,11 +232,13 @@ export const generateDashboard = async (
     throw new Error(`API call failed (key: ${preview}). ${msg}`)
   }
 
+  console.log('[AI] stop_reason:', response.stop_reason)
+  console.log('[AI] tool calls:', response.content.filter(c => c.type === 'tool_use').map(c => c.type === 'tool_use' ? `${c.name}(${JSON.stringify(c.input)})` : ''))
+
   // Extract tool calls from response
   const toolUses = response.content.filter((c): c is Anthropic.ToolUseBlock => c.type === 'tool_use')
 
   if (toolUses.length === 0) {
-    // Claude returned text instead of tool calls — surface it as an error
     const text = response.content.find(c => c.type === 'text')
     throw new Error((text as Anthropic.TextBlock | undefined)?.text || 'AI did not return any widgets. Try rephrasing your request.')
   }
@@ -250,6 +253,10 @@ export const generateDashboard = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map(t => toolCallToWidget(t.name, t.input as Record<string, any>))
     .filter((w): w is Widget => w !== null)
+
+  if (widgets.length === 0) {
+    throw new Error('AI did not add any widgets. It may have only set dashboard info. Try a more specific request like "add a sentiment KPI card and a time series chart".')
+  }
 
   // Build filter from info call
   const rangeType = info.date_range ?? 'lastTwelveMonths'
