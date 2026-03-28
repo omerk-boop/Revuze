@@ -34,6 +34,7 @@ export default class WidgetErrorBoundary extends Component<Props, State> {
           </p>
           {this.props.onDelete && (
             <button
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); this.props.onDelete!() }}
               className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-50 border border-red-200 text-red-600 text-xs font-medium hover:bg-red-100 transition-colors"
             >

@@ -83,6 +83,7 @@ export default function WidgetWrapper({ title, type, loading, error, onDelete, g
 
         {onDelete && (
           <button
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); onDelete() }}
             className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-100 text-slate-300 hover:text-red-500 shrink-0"
             title="Remove widget"
