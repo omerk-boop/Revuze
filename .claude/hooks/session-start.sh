@@ -19,7 +19,7 @@ echo "==> Type-checking (tsc)..."
 npx tsc -b --noEmit
 
 echo "==> Running tests..."
-npm test
+npm test -- --run
 
 echo "==> Launching dev server in background..."
 npm run dev &
